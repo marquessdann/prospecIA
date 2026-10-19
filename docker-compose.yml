@@ -1,0 +1,54 @@
+# Desenvolvimento/produção simples: docker compose up --build
+# Acesse http://localhost:3000 (API e documentação em http://localhost:8000/docs)
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: prospec
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prospec}
+      POSTGRES_DB: prospecia
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prospec"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  api:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://prospec:${POSTGRES_PASSWORD:-prospec}@db:5432/prospecia
+      REDIS_URL: redis://redis:6379/0
+      RUN_WORKER_IN_API: "false"
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    ports: ["8000:8000"]
+
+  worker:
+    build: ./backend
+    command: python -m app.worker
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://prospec:${POSTGRES_PASSWORD:-prospec}@db:5432/prospecia
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      api: { condition: service_started }
+    deploy:
+      replicas: 1  # aumente para escalar; a fila usa SKIP LOCKED e o rate limit é compartilhado via Redis
+
+  web:
+    build: ./frontend
+    environment:
+      API_URL: http://api:8000
+    depends_on: [api]
+    ports: ["3000:3000"]
+
+volumes:
+  pgdata:
