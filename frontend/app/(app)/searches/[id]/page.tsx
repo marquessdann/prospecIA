@@ -55,29 +55,29 @@ export default function SearchDetailPage() {
         <Card className="p-5 lg:col-span-2">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <div className="flex justify-between text-sm"><span className="font-medium">Descoberta de empresas</span><span className="tabular-nums text-gray-500">{unitsDone}/{s.units.length} lotes</span></div>
-              <div className="mt-2 h-2 rounded-full bg-gray-100"><div className="h-2 rounded-full bg-brand-500 transition-all" style={{ width: `${discoveryPct}%` }} /></div>
-              <p className="mt-2 text-sm text-gray-600">{s.total_found} encontradas · {s.total_new} novas na base</p>
+              <div className="flex justify-between text-sm"><span className="font-medium">Descoberta de empresas</span><span className="tabular-nums text-neutral-400">{unitsDone}/{s.units.length} lotes</span></div>
+              <div className="mt-2 h-2 rounded-full bg-neutral-800"><div className="h-2 rounded-full bg-brand-500 transition-all" style={{ width: `${discoveryPct}%` }} /></div>
+              <p className="mt-2 text-sm text-neutral-400">{s.total_found} encontradas · {s.total_new} novas na base</p>
             </div>
             <div>
-              <div className="flex justify-between text-sm"><span className="font-medium">Verificação de presença digital</span><span className="tabular-nums text-gray-500">{s.total_verified}/{s.total_to_verify}</span></div>
-              <div className="mt-2 h-2 rounded-full bg-gray-100"><div className="h-2 rounded-full bg-green-500 transition-all" style={{ width: `${verifyPct}%` }} /></div>
-              <p className="mt-2 text-sm text-gray-600">Custo: {usd(s.actual_cost_usd)} (estimado {usd(s.estimated_cost_usd)})</p>
+              <div className="flex justify-between text-sm"><span className="font-medium">Verificação de presença digital</span><span className="tabular-nums text-neutral-400">{s.total_verified}/{s.total_to_verify}</span></div>
+              <div className="mt-2 h-2 rounded-full bg-neutral-800"><div className="h-2 rounded-full bg-green-500 transition-all" style={{ width: `${verifyPct}%` }} /></div>
+              <p className="mt-2 text-sm text-neutral-400">Custo: {usd(s.actual_cost_usd)} (estimado {usd(s.estimated_cost_usd)})</p>
             </div>
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {STATUS_ORDER.map((k) => (
-              <span key={k} className="inline-flex items-center gap-1.5 rounded-md bg-gray-50 px-2 py-1 text-xs"><span className="h-2 w-2 rounded-full" style={{ background: STATUS[k as DigitalStatus].color }} />{STATUS[k as DigitalStatus].label}: <b>{s.status_counts[k] ?? 0}</b></span>
+              <span key={k} className="inline-flex items-center gap-1.5 rounded-md bg-neutral-950 px-2 py-1 text-xs"><span className="h-2 w-2 rounded-full" style={{ background: STATUS[k as DigitalStatus].color }} />{STATUS[k as DigitalStatus].label}: <b>{s.status_counts[k] ?? 0}</b></span>
             ))}
           </div>
         </Card>
         <Card>
           <CardHeader title="Lotes" subtitle="Fonte × localização × segmento" />
-          <ul className="max-h-48 divide-y divide-gray-100 overflow-y-auto text-xs">
+          <ul className="max-h-48 divide-y divide-neutral-800 overflow-y-auto text-xs">
             {s.units.map((u) => (
               <li key={u.id} className="flex items-start justify-between gap-2 px-4 py-2">
-                <span className="text-gray-700">{u.source} · {u.category} · {[u.location.neighborhood, u.location.city, u.location.state].filter(Boolean).join(", ") || "coordenadas"}{u.last_error && <span className="block text-red-600">{u.last_error}</span>}</span>
-                <span className={cn("whitespace-nowrap font-medium", u.status === "error" ? "text-red-600" : u.status === "done" ? "text-green-700" : "text-gray-500")}>{u.status} · {u.results_count}</span>
+                <span className="text-neutral-300">{u.source} · {u.category} · {[u.location.neighborhood, u.location.city, u.location.state].filter(Boolean).join(", ") || "coordenadas"}{u.last_error && <span className="block text-red-400">{u.last_error}</span>}</span>
+                <span className={cn("whitespace-nowrap font-medium", u.status === "error" ? "text-red-400" : u.status === "done" ? "text-green-400" : "text-neutral-400")}>{u.status} · {u.results_count}</span>
               </li>
             ))}
           </ul>
@@ -88,12 +88,12 @@ export default function SearchDetailPage() {
 
       <Card className="mt-4">
         <CardHeader title="Registro de eventos e erros de integração" />
-        <ul className="max-h-64 divide-y divide-gray-100 overflow-y-auto text-sm">
-          {s.events.length === 0 && <li className="px-5 py-3 text-gray-500">Sem eventos.</li>}
+        <ul className="max-h-64 divide-y divide-neutral-800 overflow-y-auto text-sm">
+          {s.events.length === 0 && <li className="px-5 py-3 text-neutral-400">Sem eventos.</li>}
           {s.events.map((e) => (
             <li key={e.id} className="flex gap-3 px-5 py-2">
-              <span className="whitespace-nowrap text-xs text-gray-400">{fmtDate(e.created_at)}</span>
-              <span className={cn(e.level === "error" ? "text-red-700" : e.level === "warning" ? "text-yellow-700" : "text-gray-700")}>{e.message}</span>
+              <span className="whitespace-nowrap text-xs text-neutral-500">{fmtDate(e.created_at)}</span>
+              <span className={cn(e.level === "error" ? "text-red-400" : e.level === "warning" ? "text-yellow-400" : "text-neutral-300")}>{e.message}</span>
             </li>
           ))}
         </ul>

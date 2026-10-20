@@ -99,7 +99,7 @@ export default function NewSearchPage() {
               actions={<Button size="sm" variant="secondary" onClick={() => setLocations([...locations, emptyLoc()])}><Plus className="h-4 w-4" /> Localização</Button>} />
             <div className="space-y-4 p-5">
               {locations.map((l, i) => (
-                <div key={i} className="rounded-lg border border-gray-200 p-3">
+                <div key={i} className="rounded-lg border border-neutral-800 p-3">
                   <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                     <Field label="País"><Input value={l.country ?? ""} onChange={(e) => updLoc(i, { country: e.target.value })} /></Field>
                     <Field label="Estado"><Input value={l.state ?? ""} placeholder="PR" onChange={(e) => updLoc(i, { state: e.target.value })} /></Field>
@@ -128,7 +128,7 @@ export default function NewSearchPage() {
             <div className="p-5">
               <div className="flex flex-wrap gap-2">
                 {[...SEGMENTS, ...categories.filter((c) => !SEGMENTS.includes(c))].map((c) => (
-                  <button key={c} onClick={() => toggleCat(c)} className={cn("rounded-full border px-3 py-1 text-sm", categories.includes(c) ? "border-brand-600 bg-brand-600 text-white" : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50")}>{c}</button>
+                  <button key={c} onClick={() => toggleCat(c)} className={cn("rounded-full border px-3 py-1 text-sm", categories.includes(c) ? "border-brand-500 bg-brand-500 text-black font-medium" : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:bg-neutral-800/60")}>{c}</button>
                 ))}
               </div>
               <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); if (custom.trim()) { toggleCat(custom.trim()); setCustom(""); } }}>
@@ -142,16 +142,16 @@ export default function NewSearchPage() {
             <CardHeader title="3. Fontes e verificação" />
             <div className="grid gap-5 p-5 md:grid-cols-2">
               <div className="space-y-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Fontes de empresas</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">Fontes de empresas</p>
                 {placeProviders.map((p) => (
                   <div key={p.name} className={cn("rounded-lg border p-3", !p.available && "opacity-60")}>
                     <Checkbox checked={sources.includes(p.name)} onChange={(v) => { setEstimate(null); setSources(v ? [...sources, p.name] : sources.filter((x) => x !== p.name)); }}
-                      label={<span className="font-medium">{p.label} {!p.available && <span className="text-xs text-red-600">(sem credenciais)</span>}</span>} hint={p.coverage} />
+                      label={<span className="font-medium">{p.label} {!p.available && <span className="text-xs text-red-400">(sem credenciais)</span>}</span>} hint={p.coverage} />
                   </div>
                 ))}
               </div>
               <div className="space-y-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Verificação de presença digital</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">Verificação de presença digital</p>
                 <Checkbox checked={opts.web_verification} onChange={(v) => setOpts({ ...opts, web_verification: v })} label="Buscar site oficial em mecanismo de busca autorizado"
                   hint={webProviders.length ? "Pesquisa nome + cidade e telefone." : "Nenhum provedor configurado: empresas sem site no cadastro ficarão como 'Site não informado no Maps'."} />
                 {webProviders.length > 1 && (
@@ -180,22 +180,22 @@ export default function NewSearchPage() {
               {estimate ? (
                 <>
                   <table className="w-full text-sm">
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-neutral-800">
                       {estimate.lines.map((l) => (
-                        <tr key={l.provider}><td className="py-1.5 text-gray-700">{l.provider}<div className="text-xs text-gray-400">{l.requests} req. × {usd(l.unit_cost_usd)}{l.note ? ` — ${l.note}` : ""}</div></td><td className="whitespace-nowrap py-1.5 pl-2 text-right tabular-nums">{usd(l.cost_usd)}</td></tr>
+                        <tr key={l.provider}><td className="py-1.5 text-neutral-300">{l.provider}<div className="text-xs text-neutral-500">{l.requests} req. × {usd(l.unit_cost_usd)}{l.note ? ` — ${l.note}` : ""}</div></td><td className="whitespace-nowrap py-1.5 pl-2 text-right tabular-nums">{usd(l.cost_usd)}</td></tr>
                       ))}
                       <tr className="font-semibold"><td className="py-2">Total máximo estimado</td><td className="whitespace-nowrap py-2 pl-2 text-right tabular-nums">{usd(estimate.total_usd)}</td></tr>
                     </tbody>
                   </table>
-                  <p className="text-xs text-gray-500">{estimate.units} combinação(ões) localização × segmento × fonte · até {estimate.expected_businesses_max} empresas. {estimate.disclaimer}</p>
-                  <p className="text-xs text-gray-500">Saldo do mês: {usd(estimate.budget.remaining_usd)} de {usd(estimate.budget.monthly_budget_usd)}</p>
+                  <p className="text-xs text-neutral-400">{estimate.units} combinação(ões) localização × segmento × fonte · até {estimate.expected_businesses_max} empresas. {estimate.disclaimer}</p>
+                  <p className="text-xs text-neutral-400">Saldo do mês: {usd(estimate.budget.remaining_usd)} de {usd(estimate.budget.monthly_budget_usd)}</p>
                   {estimate.warnings.map((w) => <Alert key={w} tone="warning">{w}</Alert>)}
                   <Button className="w-full" onClick={start} loading={busy}>Iniciar pesquisa</Button>
                 </>
               ) : (
                 <Button className="w-full" variant="secondary" onClick={doEstimate} loading={busy} disabled={!categories.length || !sources.length}>Calcular estimativa</Button>
               )}
-              <p className="text-xs text-gray-500">A cobertura depende das fontes conectadas, dos planos de API e dos dados cadastrados — não existe cobertura de todas as empresas.</p>
+              <p className="text-xs text-neutral-400">A cobertura depende das fontes conectadas, dos planos de API e dos dados cadastrados — não existe cobertura de todas as empresas.</p>
             </div>
           </Card>
         </div>

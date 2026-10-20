@@ -37,14 +37,14 @@ export default function MapView({ points }: { points: MapPoint[] }) {
       <FitBounds points={points} />
       {points.map((p) => (
         <CircleMarker key={p.id} center={[p.lat, p.lng]} radius={7}
-          pathOptions={{ color: "#fff", weight: 1.5, fillColor: STATUS[p.digital_status]?.color ?? "#6b7280", fillOpacity: 0.9 }}>
+          pathOptions={{ color: "#000", weight: 1.5, fillColor: STATUS[p.digital_status]?.color ?? "#6b7280", fillOpacity: 0.9 }}>
           <Popup>
             <div className="text-sm">
               <div className="font-semibold">{p.name}</div>
-              <div className="text-gray-600">{p.category} · {p.city}</div>
+              <div className="text-neutral-400">{p.category} · {p.city}</div>
               <div className="mt-1">{STATUS[p.digital_status]?.label} · pontuação {p.lead_score}</div>
-              {p.is_fictitious && <div className="font-semibold text-orange-700">FICTÍCIO (demonstração)</div>}
-              <Link href={`/leads/${p.id}`} className="mt-1 inline-block text-brand-600">Ver detalhes →</Link>
+              {p.is_fictitious && <div className="font-semibold text-orange-400">FICTÍCIO (demonstração)</div>}
+              <Link href={`/leads/${p.id}`} className="mt-1 inline-block text-brand-400">Ver detalhes →</Link>
             </div>
           </Popup>
         </CircleMarker>
@@ -64,7 +64,7 @@ export function MapPicker({ lat, lng, radiusKm, onPick }: { lat?: number; lng?: 
     <MapContainer center={center} zoom={lat != null ? 12 : 4} className="h-72 w-full rounded-lg">
       <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
       <ClickHandler onPick={onPick} />
-      {lat != null && lng != null && <Circle center={[lat, lng]} radius={(radiusKm ?? 2) * 1000} pathOptions={{ color: "#2f56d9" }} />}
+      {lat != null && lng != null && <Circle center={[lat, lng]} radius={(radiusKm ?? 2) * 1000} pathOptions={{ color: "#22c55e" }} />}
     </MapContainer>
   );
 }

@@ -36,7 +36,7 @@ export function Shell({ children }: { children: ReactNode }) {
         const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
         return (
           <Link key={n.href} href={n.href} onClick={() => setOpen(false)}
-            className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium", active ? "bg-brand-600 text-white" : "text-gray-300 hover:bg-white/10 hover:text-white")}>
+            className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium", active ? "bg-brand-500/15 text-brand-400 ring-1 ring-inset ring-brand-500/30" : "text-neutral-400 hover:bg-white/5 hover:text-white")}>
             <n.icon className="h-4 w-4" /> {n.label}
           </Link>
         );
@@ -52,22 +52,22 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <UserCtx.Provider value={user}>
       <div className="flex min-h-screen">
-        <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-brand-900 transition-transform lg:translate-x-0", open ? "translate-x-0" : "-translate-x-full")}>
+        <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-neutral-800 bg-black transition-transform lg:translate-x-0", open ? "translate-x-0" : "-translate-x-full")}>
           <div className="flex items-center justify-between px-5 py-5">
-            <Link href="/" className="text-lg font-bold text-white">Prospec<span className="text-brand-100">IA</span></Link>
-            <button className="text-gray-300 lg:hidden" onClick={() => setOpen(false)} aria-label="Fechar menu"><X className="h-5 w-5" /></button>
+            <Link href="/" className="text-lg font-bold text-white">Prospec<span className="text-brand-400">IA</span></Link>
+            <button className="text-neutral-600 lg:hidden" onClick={() => setOpen(false)} aria-label="Fechar menu"><X className="h-5 w-5" /></button>
           </div>
           {nav}
-          <div className="border-t border-white/10 p-4 text-xs text-gray-300">
+          <div className="border-t border-neutral-800 p-4 text-xs text-neutral-500">
             <div className="truncate font-medium text-white">{user.name}</div>
             <div className="truncate">{user.email} · {user.role}</div>
-            <button onClick={logout} className="mt-3 inline-flex items-center gap-2 text-gray-300 hover:text-white"><LogOut className="h-3.5 w-3.5" /> Sair</button>
+            <button onClick={logout} className="mt-3 inline-flex items-center gap-2 text-neutral-400 hover:text-brand-400"><LogOut className="h-3.5 w-3.5" /> Sair</button>
           </div>
         </aside>
         <div className="flex min-w-0 flex-1 flex-col lg:pl-60">
-          <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-200 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-neutral-800 bg-black/90 px-4 text-neutral-100 py-3 backdrop-blur lg:hidden">
             <button onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu className="h-5 w-5" /></button>
-            <span className="font-semibold">ProspecIA</span>
+            <span className="font-semibold">Prospec<span className="text-brand-400">IA</span></span>
           </header>
           <main className="mx-auto w-full max-w-[1500px] flex-1 p-4 sm:p-6">{children}</main>
         </div>
@@ -80,8 +80,8 @@ export function PageTitle({ title, subtitle, actions }: { title: string; subtitl
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-100">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>

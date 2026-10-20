@@ -12,15 +12,15 @@ import { INTERACTION_KIND, LEAD_STATUS, SCORE_CRITERIA, SOURCE_LABEL, STATUS, ST
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-3 gap-3 py-2 text-sm">
-      <dt className="text-gray-500">{label}</dt>
-      <dd className="col-span-2 break-words text-gray-900">{children || <span className="text-gray-300">—</span>}</dd>
+      <dt className="text-neutral-400">{label}</dt>
+      <dd className="col-span-2 break-words text-neutral-100">{children || <span className="text-neutral-600">—</span>}</dd>
     </div>
   );
 }
 
 function Ext({ href }: { href: string | null | undefined }) {
   if (!href) return null;
-  return <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-brand-600 hover:underline">{href} <ExternalLink className="h-3 w-3" /></a>;
+  return <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-brand-400 hover:underline">{href} <ExternalLink className="h-3 w-3" /></a>;
 }
 
 export default function BusinessPage() {
@@ -84,14 +84,14 @@ export default function BusinessPage() {
             <CardHeader title="Presença digital" subtitle={`Última verificação: ${fmtDate(b.last_verified_at)}`} actions={<StatusBadge status={b.digital_status} />} />
             <div className="space-y-3 p-5">
               <div className="flex flex-wrap items-center gap-6">
-                <div><div className="text-xs uppercase text-gray-500">Confiança</div><Confidence value={b.confidence} /></div>
-                <div><div className="text-xs uppercase text-gray-500">Pontuação do lead</div><Score value={b.lead_score} /></div>
-                {b.social_only && <Badge className="bg-pink-100 text-pink-800">Presença apenas em redes sociais</Badge>}
+                <div><div className="text-xs uppercase text-neutral-400">Confiança</div><Confidence value={b.confidence} /></div>
+                <div><div className="text-xs uppercase text-neutral-400">Pontuação do lead</div><Score value={b.lead_score} /></div>
+                {b.social_only && <Badge className="bg-pink-500/15 text-pink-300">Presença apenas em redes sociais</Badge>}
               </div>
-              <p className="text-sm text-gray-800">{b.classification_reason}</p>
+              <p className="text-sm text-neutral-200">{b.classification_reason}</p>
               {b.ai_summary && <Alert tone="info"><b>Observação gerada por IA</b> (baseada apenas nas evidências): {b.ai_summary}</Alert>}
-              <p className="text-xs text-gray-500">{STATUS[b.digital_status].hint}</p>
-              <dl className="divide-y divide-gray-100">
+              <p className="text-xs text-neutral-400">{STATUS[b.digital_status].hint}</p>
+              <dl className="divide-y divide-neutral-800">
                 <Row label="Site informado na fonte"><Ext href={b.source_website} /></Row>
                 <Row label="Site oficial identificado"><Ext href={b.official_website} /></Row>
                 <Row label="Domínio não confirmado"><Ext href={b.candidate_website} /></Row>
@@ -104,28 +104,28 @@ export default function BusinessPage() {
           {last && (
             <Card>
               <CardHeader title="Evidências da última verificação" subtitle={`${last.ai_used ? "Com análise por IA · " : ""}custo ${usd(last.cost_usd)}`} />
-              <ul className="divide-y divide-gray-100">
+              <ul className="divide-y divide-neutral-800">
                 {last.evidence.map((e, i) => (
                   <li key={i} className="flex gap-3 px-5 py-2.5 text-sm">
-                    <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", e.polarity === "+" ? "bg-blue-500" : e.polarity === "-" ? "bg-green-500" : "bg-gray-300")} title={e.polarity === "+" ? "Indica site" : e.polarity === "-" ? "Indica ausência de site" : "Neutro"} />
-                    <div><span className="font-medium text-gray-700">{e.source}:</span> {e.detail} {e.url && <Ext href={e.url} />}</div>
+                    <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", e.polarity === "+" ? "bg-blue-500" : e.polarity === "-" ? "bg-green-500" : "bg-neutral-700")} title={e.polarity === "+" ? "Indica site" : e.polarity === "-" ? "Indica ausência de site" : "Neutro"} />
+                    <div><span className="font-medium text-neutral-300">{e.source}:</span> {e.detail} {e.url && <Ext href={e.url} />}</div>
                   </li>
                 ))}
               </ul>
-              <div className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500"><b>Fontes consultadas:</b> {last.sources_consulted.join(" · ")}</div>
+              <div className="border-t border-neutral-800 px-5 py-3 text-xs text-neutral-400"><b>Fontes consultadas:</b> {last.sources_consulted.join(" · ")}</div>
             </Card>
           )}
 
           <Card>
             <CardHeader title="Histórico de verificações" />
-            <ul className="divide-y divide-gray-100 text-sm">
-              {b.verifications.length === 0 && <li className="px-5 py-3 text-gray-500">Ainda não verificada.</li>}
+            <ul className="divide-y divide-neutral-800 text-sm">
+              {b.verifications.length === 0 && <li className="px-5 py-3 text-neutral-400">Ainda não verificada.</li>}
               {b.verifications.map((v) => (
                 <li key={v.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5">
-                  <span className="text-xs text-gray-400">{fmtDate(v.created_at)}</span>
+                  <span className="text-xs text-neutral-500">{fmtDate(v.created_at)}</span>
                   <StatusBadge status={v.status} short />
-                  <span className="text-xs text-gray-500">{v.confidence}%</span>
-                  <span className="flex-1 text-gray-700">{v.reason}</span>
+                  <span className="text-xs text-neutral-400">{v.confidence}%</span>
+                  <span className="flex-1 text-neutral-300">{v.reason}</span>
                 </li>
               ))}
             </ul>
@@ -135,7 +135,7 @@ export default function BusinessPage() {
         <div className="space-y-4">
           <Card>
             <CardHeader title="Dados públicos coletados" />
-            <dl className="divide-y divide-gray-100 px-5">
+            <dl className="divide-y divide-neutral-800 px-5">
               <Row label="Endereço">{b.address}</Row>
               <Row label="Bairro / CEP">{[b.neighborhood, b.postal_code].filter(Boolean).join(" · ")}</Row>
               <Row label="Telefone">{b.phone}</Row>
@@ -144,7 +144,7 @@ export default function BusinessPage() {
               <Row label="Funcionamento">{b.business_status}</Row>
               <Row label="Perfil na fonte"><Ext href={b.maps_url} /></Row>
             </dl>
-            <div className="border-t border-gray-100 px-5 py-3 text-xs text-gray-500">
+            <div className="border-t border-neutral-800 px-5 py-3 text-xs text-neutral-400">
               {b.source_records.map((s) => (
                 <div key={s.id}>{SOURCE_LABEL[s.source] ?? s.source}: <Ext href={s.source_url} /> · coletado {fmtDate(s.fetched_at)}{s.expires_at && ` · retenção até ${fmtDate(s.expires_at)}`}</div>
               ))}
@@ -174,7 +174,7 @@ export default function BusinessPage() {
                 </Field>
               )}
               {b.lead_status === "nao_contatar" && <Alert tone="warning">Marcada como “Não contatar”: excluída das exportações por padrão.</Alert>}
-              <div className="border-t border-gray-100 pt-3">
+              <div className="border-t border-neutral-800 pt-3">
                 <div className="flex gap-2">
                   <Select className="w-32" value={note.kind} onChange={(e) => setNote({ ...note, kind: e.target.value })}>
                     {["note", "call", "email", "whatsapp", "meeting", "other"].map((k) => <option key={k} value={k}>{INTERACTION_KIND[k]}</option>)}
@@ -185,13 +185,13 @@ export default function BusinessPage() {
               </div>
               <ul className="space-y-2">
                 {b.interactions.map((it) => (
-                  <li key={it.id} className="rounded-lg bg-gray-50 p-2.5 text-sm">
-                    <div className="text-xs text-gray-500">{INTERACTION_KIND[it.kind] ?? it.kind} · {it.user_name ?? "sistema"} · {fmtDate(it.created_at)}</div>
-                    <div className="text-gray-800">{it.content}</div>
+                  <li key={it.id} className="rounded-lg bg-neutral-950 p-2.5 text-sm">
+                    <div className="text-xs text-neutral-400">{INTERACTION_KIND[it.kind] ?? it.kind} · {it.user_name ?? "sistema"} · {fmtDate(it.created_at)}</div>
+                    <div className="text-neutral-200">{it.content}</div>
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-gray-400">Envio automático de mensagens não é realizado. Respeite a LGPD e as regras de cada canal.</p>
+              <p className="text-xs text-neutral-500">Envio automático de mensagens não é realizado. Respeite a LGPD e as regras de cada canal.</p>
             </div>
           </Card>
 
@@ -199,7 +199,7 @@ export default function BusinessPage() {
             <Card>
               <CardHeader title="Composição da pontuação" subtitle={b.score_breakdown.note} />
               <ul className="space-y-1 p-5 text-sm">
-                {Object.entries(b.score_breakdown.criteria).map(([k, v]) => <li key={k} className="flex justify-between"><span className="text-gray-600">{SCORE_CRITERIA[k] ?? k}</span><span className="tabular-nums">{v} / {Math.round(((b.score_breakdown?.weights[k] ?? 0) / Math.max(1, Object.values(b.score_breakdown?.weights ?? {}).reduce((a, x) => a + x, 0))) * 100)}</span></li>)}
+                {Object.entries(b.score_breakdown.criteria).map(([k, v]) => <li key={k} className="flex justify-between"><span className="text-neutral-400">{SCORE_CRITERIA[k] ?? k}</span><span className="tabular-nums">{v} / {Math.round(((b.score_breakdown?.weights[k] ?? 0) / Math.max(1, Object.values(b.score_breakdown?.weights ?? {}).reduce((a, x) => a + x, 0))) * 100)}</span></li>)}
               </ul>
             </Card>
           )}

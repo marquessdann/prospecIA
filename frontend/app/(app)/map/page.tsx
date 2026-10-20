@@ -24,12 +24,12 @@ export default function MapPage() {
       <Card className="mb-3 flex flex-wrap items-center gap-2 p-3">
         {STATUS_ORDER.map((s) => (
           <button key={s} onClick={() => setStatuses((x) => (x.includes(s) ? x.filter((y) => y !== s) : [...x, s]))}
-            className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs", statuses.includes(s) ? "border-gray-800 bg-gray-800 text-white" : "border-gray-200")}>
+            className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs", statuses.includes(s) ? "border-brand-500 bg-brand-500/15 text-brand-300" : "border-neutral-800")}>
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: STATUS[s].color }} /> {STATUS[s].label}
           </button>
         ))}
         <Input className="ml-auto w-56" placeholder="Filtrar por cidade" value={city} onChange={(e) => setCity(e.target.value)} />
-        <span className="text-xs text-gray-500">{points?.length ?? 0} no mapa</span>
+        <span className="text-xs text-neutral-400">{points?.length ?? 0} no mapa</span>
       </Card>
       <div className="h-[70vh]">{points ? <MapView points={points} /> : <Spinner />}</div>
     </>

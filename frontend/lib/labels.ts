@@ -5,42 +5,42 @@ export const STATUS: Record<DigitalStatus, { label: string; short: string; color
     label: "Sem site identificado",
     short: "Sem site",
     color: "#16a34a",
-    badge: "bg-green-100 text-green-800 ring-green-600/20",
+    badge: "bg-green-500/15 text-green-300 ring-green-500/30",
     hint: "Nenhuma evidência confiável de site próprio após as verificações realizadas.",
   },
   SITE_NAO_INFORMADO_NO_MAPS: {
     label: "Site não informado no Maps",
     short: "Não informado",
     color: "#ca8a04",
-    badge: "bg-yellow-100 text-yellow-800 ring-yellow-600/20",
+    badge: "bg-yellow-500/15 text-yellow-300 ring-yellow-500/30",
     hint: "O cadastro de origem não apresenta site — isso NÃO confirma ausência de site na internet.",
   },
   POSSUI_SITE: {
     label: "Possui site",
     short: "Possui site",
     color: "#2563eb",
-    badge: "bg-blue-100 text-blue-800 ring-blue-600/20",
+    badge: "bg-blue-500/15 text-blue-300 ring-blue-500/30",
     hint: "Site oficial identificado e acessível.",
   },
   SITE_INDISPONIVEL: {
     label: "Site indisponível",
     short: "Indisponível",
     color: "#dc2626",
-    badge: "bg-red-100 text-red-800 ring-red-600/20",
+    badge: "bg-red-500/15 text-red-300 ring-red-500/30",
     hint: "Um possível site oficial foi identificado, mas não respondeu às verificações.",
   },
   SITE_SUSPEITO: {
     label: "Site suspeito/não confirmado",
     short: "Suspeito",
     color: "#9333ea",
-    badge: "bg-purple-100 text-purple-800 ring-purple-600/20",
+    badge: "bg-purple-500/15 text-purple-300 ring-purple-500/30",
     hint: "Há indícios de um domínio, sem evidências suficientes de que pertence à empresa.",
   },
   VERIFICACAO_PENDENTE: {
     label: "Verificação pendente",
     short: "Pendente",
     color: "#6b7280",
-    badge: "bg-gray-100 text-gray-700 ring-gray-500/20",
+    badge: "bg-neutral-800 text-neutral-300 ring-neutral-500/30",
     hint: "Não foi possível concluir a análise.",
   },
 };
@@ -67,12 +67,12 @@ export const LEAD_STATUS: Record<string, string> = {
 };
 
 export const SEARCH_STATUS: Record<string, { label: string; badge: string }> = {
-  queued: { label: "Na fila", badge: "bg-gray-100 text-gray-700" },
-  running: { label: "Em execução", badge: "bg-blue-100 text-blue-800" },
-  paused: { label: "Pausada", badge: "bg-yellow-100 text-yellow-800" },
-  completed: { label: "Concluída", badge: "bg-green-100 text-green-800" },
-  failed: { label: "Falhou", badge: "bg-red-100 text-red-800" },
-  cancelled: { label: "Cancelada", badge: "bg-gray-200 text-gray-600" },
+  queued: { label: "Na fila", badge: "bg-neutral-800 text-neutral-300" },
+  running: { label: "Em execução", badge: "bg-blue-500/15 text-blue-300" },
+  paused: { label: "Pausada", badge: "bg-yellow-500/15 text-yellow-300" },
+  completed: { label: "Concluída", badge: "bg-green-500/15 text-green-300" },
+  failed: { label: "Falhou", badge: "bg-red-500/15 text-red-300" },
+  cancelled: { label: "Cancelada", badge: "bg-neutral-800 text-neutral-400" },
 };
 
 export const SEGMENTS = [

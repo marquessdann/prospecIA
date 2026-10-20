@@ -29,13 +29,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-900 to-brand-600 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-black bg-[radial-gradient(ellipse_at_top,rgba(34,197,94,0.18),transparent_60%)] p-4">
       <Card className="w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold">Prospec<span className="text-brand-600">IA</span></h1>
-        <p className="mt-1 text-sm text-gray-500">Encontre empresas sem site em fontes autorizadas, com evidências e nível de confiança.</p>
-        <div className="mt-6 grid grid-cols-2 rounded-lg bg-gray-100 p-1 text-sm">
+        <h1 className="text-2xl font-bold">Prospec<span className="text-brand-400">IA</span></h1>
+        <p className="mt-1 text-sm text-neutral-400">Encontre empresas sem site em fontes autorizadas, com evidências e nível de confiança.</p>
+        <div className="mt-6 grid grid-cols-2 rounded-lg bg-neutral-800 p-1 text-sm">
           {(["login", "register"] as const).map((m) => (
-            <button key={m} onClick={() => setMode(m)} className={`rounded-md py-1.5 font-medium ${mode === m ? "bg-white shadow" : "text-gray-500"}`}>
+            <button key={m} onClick={() => setMode(m)} className={`rounded-md py-1.5 font-medium ${mode === m ? "bg-neutral-700 text-neutral-100 shadow" : "text-neutral-400"}`}>
               {m === "login" ? "Entrar" : "Criar conta"}
             </button>
           ))}

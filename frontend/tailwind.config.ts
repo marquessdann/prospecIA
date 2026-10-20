@@ -4,8 +4,14 @@ export default {
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Bordas sem cor explícita seguem o tema escuro.
+      borderColor: { DEFAULT: "#262626" },
       colors: {
-        brand: { 50: "#eef4ff", 100: "#dbe7ff", 500: "#3b6cf6", 600: "#2f56d9", 700: "#2644ad", 900: "#172554" },
+        // Verde principal (botões, links, foco e destaques) sobre fundo preto.
+        brand: {
+          50: "#f0fdf4", 100: "#dcfce7", 200: "#bbf7d0", 300: "#86efac", 400: "#4ade80",
+          500: "#22c55e", 600: "#16a34a", 700: "#15803d", 800: "#166534", 900: "#14532d",
+        },
       },
     },
   },

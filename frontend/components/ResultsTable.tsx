@@ -36,9 +36,9 @@ function host(url: string | null) {
 }
 
 function LinkOut({ href, children }: { href: string | null; children?: React.ReactNode }) {
-  if (!href) return <span className="text-gray-300">—</span>;
+  if (!href) return <span className="text-neutral-600">—</span>;
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex max-w-[160px] items-center gap-1 truncate text-brand-600 hover:underline">
+    <a href={href} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex max-w-[160px] items-center gap-1 truncate text-brand-400 hover:underline">
       <span className="truncate">{children ?? host(href)}</span> <ExternalLink className="h-3 w-3 shrink-0" />
     </a>
   );
@@ -116,9 +116,9 @@ export function ResultsTable({ fixed = {}, initial = {}, autoRefreshMs }: { fixe
 
   return (
     <Card>
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 p-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 p-3">
         <div className="relative min-w-[220px] flex-1">
-          <SearchIcon className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <SearchIcon className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-neutral-500" />
           <Input className="pl-9" placeholder="Buscar por nome, endereço, telefone ou domínio..." value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
         </div>
         <Button variant="secondary" onClick={() => setShowFilters((v) => !v)}><Filter className="h-4 w-4" /> Filtros{activeCount ? ` (${activeCount})` : ""}</Button>
@@ -127,22 +127,22 @@ export function ResultsTable({ fixed = {}, initial = {}, autoRefreshMs }: { fixe
         <a href={exportUrl("xlsx")}><Button variant="secondary"><Download className="h-4 w-4" /> Excel</Button></a>
       </div>
 
-      <div className="flex flex-wrap gap-1.5 border-b border-gray-100 px-3 py-2">
+      <div className="flex flex-wrap gap-1.5 border-b border-neutral-800 px-3 py-2">
         {STATUS_ORDER.map((s) => (
           <button key={s} onClick={() => toggleStatus(s)} title={STATUS[s].hint}
-            className={cn("rounded-full border px-2.5 py-1 text-xs font-medium transition", statuses.includes(s) ? "border-transparent text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50")}
+            className={cn("rounded-full border px-2.5 py-1 text-xs font-medium transition", statuses.includes(s) ? "border-transparent text-white" : "border-neutral-800 bg-neutral-900 text-neutral-400 hover:bg-neutral-800/60")}
             style={statuses.includes(s) ? { background: STATUS[s].color } : undefined}>
             {STATUS[s].label}
           </button>
         ))}
         <button onClick={() => setF("social_only", filters.social_only ? undefined : "true")}
-          className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", filters.social_only ? "border-transparent bg-pink-600 text-white" : "border-gray-200 text-gray-600")}>
+          className={cn("rounded-full border px-2.5 py-1 text-xs font-medium", filters.social_only ? "border-transparent bg-pink-600 text-white" : "border-neutral-800 text-neutral-400")}>
           Só redes sociais
         </button>
       </div>
 
       {showFilters && (
-        <div className="grid gap-3 border-b border-gray-100 bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+        <div className="grid gap-3 border-b border-neutral-800 bg-neutral-950 p-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
           <Field label="Cidade"><Input value={filters.city ?? ""} onChange={(e) => setF("city", e.target.value)} /></Field>
           <Field label="Estado"><Input value={filters.state ?? ""} onChange={(e) => setF("state", e.target.value)} placeholder="PR" /></Field>
           <Field label="Bairro"><Input value={filters.neighborhood ?? ""} onChange={(e) => setF("neighborhood", e.target.value)} /></Field>
@@ -186,7 +186,7 @@ export function ResultsTable({ fixed = {}, initial = {}, autoRefreshMs }: { fixe
       )}
 
       {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 bg-brand-50 px-3 py-2 text-sm">
+        <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 bg-brand-500/10 px-3 py-2 text-sm">
           <span className="font-medium">{selected.size} selecionada(s)</span>
           <Select className="w-auto" defaultValue="" onChange={(e) => { if (e.target.value) bulk("/api/businesses/bulk", { lead_status: e.target.value }, (r) => `${r.updated} atualizada(s).`); e.target.value = ""; }}>
             <option value="">Alterar status para...</option>
@@ -205,47 +205,47 @@ export function ResultsTable({ fixed = {}, initial = {}, autoRefreshMs }: { fixe
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-500">
+            <thead className="bg-neutral-950 text-left text-xs uppercase tracking-wide text-neutral-400">
               <tr>
                 <th className="px-3 py-2"><input type="checkbox" checked={allChecked} onChange={toggleAll} aria-label="Selecionar página" /></th>
                 {COLS.map((c) => (
-                  <th key={c.key} className={cn("whitespace-nowrap px-3 py-2 font-medium", c.sort && "cursor-pointer select-none hover:text-gray-800")} onClick={() => toggleSort(c.sort)}>
+                  <th key={c.key} className={cn("whitespace-nowrap px-3 py-2 font-medium", c.sort && "cursor-pointer select-none hover:text-neutral-200")} onClick={() => toggleSort(c.sort)}>
                     <span className="inline-flex items-center gap-1">{c.label}{c.sort === sort && (order === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}</span>
                   </th>
                 ))}
                 <th className="px-3 py-2" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-neutral-800">
               {data.items.map((b) => (
-                <tr key={b.id} className={cn("align-top hover:bg-gray-50", selected.has(b.id) && "bg-brand-50/50")}>
+                <tr key={b.id} className={cn("align-top hover:bg-neutral-800/60", selected.has(b.id) && "bg-brand-500/5")}>
                   <td className="px-3 py-2.5"><input type="checkbox" checked={selected.has(b.id)} onChange={() => toggleOne(b.id)} aria-label={`Selecionar ${b.name}`} /></td>
                   <td className="px-3 py-2.5"><Score value={b.lead_score} /></td>
                   <td className="min-w-[220px] max-w-[280px] px-3 py-2.5">
-                    <Link href={`/leads/${b.id}`} className="font-medium text-gray-900 hover:text-brand-600">{b.name}</Link>
+                    <Link href={`/leads/${b.id}`} className="font-medium text-neutral-100 hover:text-brand-400">{b.name}</Link>
                     <div className="mt-0.5 flex flex-wrap gap-1">
                       {b.is_fictitious && <FictitiousTag />}
-                      {b.possible_duplicate_of && <Badge className="bg-amber-100 text-amber-800">possível duplicada</Badge>}
-                      {b.social_only && <Badge className="bg-pink-100 text-pink-800">só redes sociais</Badge>}
-                      {b.rating != null && <span className="text-xs text-gray-500">★ {b.rating} ({b.reviews_count ?? 0})</span>}
+                      {b.possible_duplicate_of && <Badge className="bg-amber-500/15 text-amber-300">possível duplicada</Badge>}
+                      {b.social_only && <Badge className="bg-pink-500/15 text-pink-300">só redes sociais</Badge>}
+                      {b.rating != null && <span className="text-xs text-neutral-400">★ {b.rating} ({b.reviews_count ?? 0})</span>}
                     </div>
                   </td>
-                  <td className="max-w-[160px] px-3 py-2.5 text-gray-600">{b.category ?? "—"}</td>
-                  <td className="min-w-[180px] max-w-[220px] px-3 py-2.5 text-gray-600">
-                    <div className="font-medium text-gray-800">{[b.city, b.state].filter(Boolean).join(" / ") || "—"}</div>
+                  <td className="max-w-[160px] px-3 py-2.5 text-neutral-400">{b.category ?? "—"}</td>
+                  <td className="min-w-[180px] max-w-[220px] px-3 py-2.5 text-neutral-400">
+                    <div className="font-medium text-neutral-200">{[b.city, b.state].filter(Boolean).join(" / ") || "—"}</div>
                     <div className="truncate text-xs" title={b.address ?? ""}>{b.address}</div>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-gray-700">{b.phone ?? <span className="text-gray-300">—</span>}</td>
-                  <td className="max-w-[160px] truncate px-3 py-2.5 text-gray-700">{b.email ?? <span className="text-gray-300">—</span>}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-neutral-300">{b.phone ?? <span className="text-neutral-600">—</span>}</td>
+                  <td className="max-w-[160px] truncate px-3 py-2.5 text-neutral-300">{b.email ?? <span className="text-neutral-600">—</span>}</td>
                   <td className="px-3 py-2.5"><LinkOut href={b.maps_url}>{(b.sources ?? []).map((s) => SOURCE_LABEL[s] ?? s).join(", ") || "abrir"}</LinkOut></td>
                   <td className="px-3 py-2.5"><LinkOut href={b.source_website} /></td>
                   <td className="px-3 py-2.5">
-                    {b.official_website ? <LinkOut href={b.official_website} /> : b.candidate_website ? <span title="Não confirmado"><LinkOut href={b.candidate_website}>{host(b.candidate_website)} (?)</LinkOut></span> : <span className="text-gray-300">—</span>}
+                    {b.official_website ? <LinkOut href={b.official_website} /> : b.candidate_website ? <span title="Não confirmado"><LinkOut href={b.candidate_website}>{host(b.candidate_website)} (?)</LinkOut></span> : <span className="text-neutral-600">—</span>}
                   </td>
                   <td className="px-3 py-2.5"><StatusBadge status={b.digital_status} short /></td>
                   <td className="px-3 py-2.5"><Confidence value={b.confidence} /></td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-xs text-gray-500">{b.verification_state === "queued" ? <Badge className="bg-blue-50 text-blue-700">na fila</Badge> : fmtDate(b.last_verified_at)}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-xs text-gray-600">{LEAD_STATUS[b.lead_status] ?? b.lead_status}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-xs text-neutral-400">{b.verification_state === "queued" ? <Badge className="bg-blue-500/10 text-blue-400">na fila</Badge> : fmtDate(b.last_verified_at)}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-xs text-neutral-400">{LEAD_STATUS[b.lead_status] ?? b.lead_status}</td>
                   <td className="px-3 py-2.5"><Link href={`/leads/${b.id}`}><Button size="sm" variant="secondary">Detalhes</Button></Link></td>
                 </tr>
               ))}
@@ -255,7 +255,7 @@ export function ResultsTable({ fixed = {}, initial = {}, autoRefreshMs }: { fixe
       )}
 
       {data && (
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-3 py-2 text-sm text-gray-600">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-neutral-800 px-3 py-2 text-sm text-neutral-400">
           <span>{data.total.toLocaleString("pt-BR")} empresa(s) · página {page} de {totalPages}</span>
           <div className="flex items-center gap-2">
             <Select className="w-auto" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>

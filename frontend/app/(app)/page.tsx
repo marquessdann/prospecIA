@@ -24,11 +24,11 @@ interface Dash {
 function Kpi({ label, value, color, href, hint }: { label: string; value: number; color?: string; href?: string; hint?: string }) {
   const body = (
     <Card className="h-full p-4 transition hover:shadow-md">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500" title={hint}>
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-neutral-400" title={hint}>
         {color && <span className="h-2 w-2 rounded-full" style={{ background: color }} />}
         {label}
       </div>
-      <div className="mt-2 text-3xl font-bold tabular-nums text-gray-900">{value.toLocaleString("pt-BR")}</div>
+      <div className="mt-2 text-3xl font-bold tabular-nums text-neutral-100">{value.toLocaleString("pt-BR")}</div>
     </Card>
   );
   return href ? <Link href={href}>{body}</Link> : body;
@@ -36,13 +36,13 @@ function Kpi({ label, value, color, href, hint }: { label: string; value: number
 
 function Bars({ rows }: { rows: { label: string; count: number }[] }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
-  if (!rows.length) return <p className="px-5 py-6 text-sm text-gray-500">Sem dados ainda.</p>;
+  if (!rows.length) return <p className="px-5 py-6 text-sm text-neutral-400">Sem dados ainda.</p>;
   return (
     <ul className="space-y-2.5 px-5 py-4">
       {rows.map((r) => (
         <li key={r.label} className="text-sm">
-          <div className="mb-1 flex justify-between gap-2"><span className="truncate text-gray-700">{r.label}</span><span className="tabular-nums text-gray-500">{r.count}</span></div>
-          <div className="h-2 rounded-full bg-gray-100"><div className="h-2 rounded-full bg-brand-500" style={{ width: `${(r.count / max) * 100}%` }} /></div>
+          <div className="mb-1 flex justify-between gap-2"><span className="truncate text-neutral-300">{r.label}</span><span className="tabular-nums text-neutral-400">{r.count}</span></div>
+          <div className="h-2 rounded-full bg-neutral-800"><div className="h-2 rounded-full bg-brand-500" style={{ width: `${(r.count / max) * 100}%` }} /></div>
         </li>
       ))}
     </ul>
@@ -75,7 +75,7 @@ export default function Dashboard() {
         ))}
         <Kpi label="Aguardando verificação" value={data.awaiting_verification} />
       </div>
-      <p className="mt-2 text-xs text-gray-500">“Site não informado no Maps” indica apenas que o cadastro de origem não traz site — não confirma ausência de site na internet.</p>
+      <p className="mt-2 text-xs text-neutral-400">“Site não informado no Maps” indica apenas que o cadastro de origem não traz site — não confirma ausência de site na internet.</p>
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card><CardHeader title="Empresas por cidade" /><Bars rows={data.by_city.map((r) => ({ label: r.city, count: r.count }))} /></Card>
         <Card><CardHeader title="Empresas por segmento" /><Bars rows={data.by_category.map((r) => ({ label: r.category, count: r.count }))} /></Card>
@@ -84,7 +84,7 @@ export default function Dashboard() {
           <Bars rows={Object.entries(LEAD_STATUS).map(([k, label]) => ({ label, count: data.by_lead_status[k] ?? 0 }))} />
         </Card>
       </div>
-      <div className="mt-4 text-sm text-gray-500">Pesquisas ativas: {data.active_searches} · Consumo do mês: {usd(b.spent_usd)} / {usd(b.monthly_budget_usd)}</div>
+      <div className="mt-4 text-sm text-neutral-400">Pesquisas ativas: {data.active_searches} · Consumo do mês: {usd(b.spent_usd)} / {usd(b.monthly_budget_usd)}</div>
     </>
   );
 }
