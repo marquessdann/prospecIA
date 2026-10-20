@@ -134,12 +134,30 @@ class OsmOverpassProvider(PlaceProvider):
                 prefix = ""
         filters = category_filters(category)
         body = "".join(f"nwr{f}{scope};" for f in filters)
-        query = f"[out:json][timeout:90];{prefix}({body});out center tags {max(1, limit)};"
-        data, cached = await self._request("POST", settings.overpass_url, client=client, data={"data": query},
-                                           headers=self._headers(), cache_payload={"q": query}, retries=3)
+        query = f"[out:json][timeout:25];{prefix}({body});out center tags {max(1, limit)};"
+        data, cached = await self._overpass(client, query)
         requests += 0 if cached else 1
         records = [r for r in (self._parse(e, category) for e in data.get("elements", [])) if r]
         return DiscoveryPage(records=records[:limit], next_token=None, requests=requests, cost_usd=0.0, cached=cached)
+
+    def overpass_urls(self) -> list[str]:
+        urls = [settings.overpass_url] + [u.strip() for u in settings.overpass_fallback_urls.split(",") if u.strip()]
+        return list(dict.fromkeys(urls))
+
+    async def _overpass(self, client: httpx.AsyncClient, query: str) -> tuple[dict, bool]:
+        """Consulta o Overpass; se o servidor estiver sobrecarregado, tenta os espelhos públicos."""
+        last: ProviderError | None = None
+        for url in self.overpass_urls():
+            try:
+                return await self._request("POST", url, client=client, data={"data": query}, headers=self._headers(),
+                                           cache_payload={"q": query}, retries=2, timeout=40)
+            except ProviderError as e:
+                if not e.retryable:
+                    raise
+                last = e
+        assert last is not None
+        raise ProviderError(self.name, f"todos os servidores Overpass estão ocupados; nova tentativa automática em breve "
+                                       f"(último erro: {str(last)[:160]})")
 
     @staticmethod
     def _parse(el: dict, category: str) -> PlaceRecord | None:

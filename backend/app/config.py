@@ -53,6 +53,12 @@ class Settings(BaseSettings):
 
     osm_enabled: bool = True
     overpass_url: str = "https://overpass-api.de/api/interpreter"
+    # Servidores públicos alternativos, usados quando o principal está sobrecarregado (502/503/504/429).
+    overpass_fallback_urls: str = (
+        "https://overpass.private.coffee/api/interpreter,"
+        "https://overpass.kumi.systems/api/interpreter,"
+        "https://maps.mail.ru/osm/tools/overpass/api/interpreter"
+    )
     nominatim_url: str = "https://nominatim.openstreetmap.org"
     osm_contact_email: str | None = None  # exigido pela política de uso do Nominatim (User-Agent identificável)
     osm_rps: float = 0.5

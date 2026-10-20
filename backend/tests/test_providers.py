@@ -112,3 +112,35 @@ async def test_brave(monkeypatch):
     async with httpx.AsyncClient() as c:
         r = await BraveSearchProvider().search(c, '"A" Curitiba', "Brasil")
     assert r.results[0].url == "https://a.com" and r.cost_usd == settings.cost_brave_search_per_request
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overpass_usa_espelho_quando_principal_esta_lotado(monkeypatch):
+    monkeypatch.setattr(settings, "osm_cache_hours", 0)
+    monkeypatch.setattr(settings, "overpass_fallback_urls", "https://espelho.example/api/interpreter")
+    monkeypatch.setattr("app.providers.base.asyncio.sleep", _nosleep)
+    respx.get(f"{settings.nominatim_url}/search").respond(200, json=[
+        {"osm_type": "relation", "osm_id": 1, "lat": "-25.4", "lon": "-49.2"}])
+    principal = respx.post(settings.overpass_url).respond(502, text="server is currently at capacity")
+    espelho = respx.post("https://espelho.example/api/interpreter").respond(200, json={"elements": [
+        {"type": "node", "id": 1, "lat": -25.4, "lon": -49.2, "tags": {"name": "Bar do Zé", "amenity": "bar"}}]})
+    async with httpx.AsyncClient() as c:
+        page = await OsmOverpassProvider().search(c, "restaurantes", Location(city="Curitiba"), None, 50)
+    assert principal.call_count == 2 and espelho.call_count == 1
+    assert page.records[0].name == "Bar do Zé"
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_overpass_todos_lotados_gera_erro_curto_e_retentavel(monkeypatch):
+    monkeypatch.setattr(settings, "osm_cache_hours", 0)
+    monkeypatch.setattr(settings, "overpass_fallback_urls", "")
+    monkeypatch.setattr("app.providers.base.asyncio.sleep", _nosleep)
+    respx.get(f"{settings.nominatim_url}/search").respond(200, json=[
+        {"osm_type": "relation", "osm_id": 1, "lat": "-25.4", "lon": "-49.2"}])
+    respx.post(settings.overpass_url).respond(502, text="x" * 2000)
+    async with httpx.AsyncClient() as c:
+        with pytest.raises(ProviderError) as e:
+            await OsmOverpassProvider().search(c, "restaurantes", Location(city="Curitiba"), None, 50)
+    assert e.value.retryable and len(str(e.value)) < 400 and "ocupados" in str(e.value)

@@ -180,6 +180,8 @@ class _HttpMixin:
                     last = ProviderError(self.name, "limite de requisições/cota atingido (HTTP 429)", billing=True)
                     if retry_after and retry_after.isdigit():
                         delay = max(delay, min(float(retry_after), 60))
+                elif resp.status_code >= 500:
+                    last = ProviderError(self.name, f"servidor do provedor sobrecarregado ou fora do ar (HTTP {resp.status_code})")
                 else:
                     last = ProviderError(self.name, f"HTTP {resp.status_code}: {body}")
             if attempt < retries - 1:
