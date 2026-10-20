@@ -46,6 +46,7 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allo
 
 
 _migrated = False
+_migrate_lock = asyncio.Lock()
 
 
 @app.middleware("http")
@@ -58,13 +59,15 @@ async def auto_migrate(request: Request, call_next):
     if settings.auto_migrate and not _migrated:
         from app import migrate
 
-        try:
-            await asyncio.to_thread(migrate.upgrade_head)
-            _migrated = True
-            migrate.last_error = None
-        except Exception as e:  # noqa: BLE001
-            migrate.last_error = migrate.describe_error(e)
-            log.exception("falha ao aplicar migrações")
+        async with _migrate_lock:
+            try:
+                if not _migrated:  # outra requisição concorrente pode ter migrado enquanto esperava
+                    await asyncio.to_thread(migrate.upgrade_head)
+                _migrated = True
+                migrate.last_error = None
+            except Exception as e:  # noqa: BLE001
+                migrate.last_error = migrate.describe_error(e)
+                log.exception("falha ao aplicar migrações")
     return await call_next(request)
 
 

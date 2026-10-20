@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 
 from alembic import command
@@ -24,7 +25,20 @@ def describe_error(e: Exception) -> str:
 ROOT = Path(__file__).resolve().parents[1]
 
 
+_lock = threading.Lock()
+
+
 def upgrade_head() -> None:
+    """Aplica as migrações uma vez por processo.
+
+    O Alembic usa estado global (`alembic.context`); requisições simultâneas na mesma instância
+    (Fluid compute) não podem migrar em paralelo, por isso a trava.
+    """
+    with _lock:
+        _upgrade()
+
+
+def _upgrade() -> None:
     cfg = Config(str(ROOT / "alembic.ini"))
     cfg.set_main_option("script_location", str(ROOT / "alembic"))
     url = settings.database_url_unpooled or settings.database_url
