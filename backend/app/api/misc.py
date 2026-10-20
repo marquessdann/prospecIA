@@ -24,9 +24,26 @@ router = APIRouter(prefix="/api", tags=["misc"])
 
 
 @router.get("/health")
-def health(db: Session = Depends(get_db)):
-    db.execute(text("SELECT 1"))
-    return {"status": "ok", "env": settings.app_env}
+def health():
+    """Diagnóstico sem dados sensíveis: banco, migrações e modo de processamento."""
+    from app import migrate
+    from app.db import SessionLocal
+
+    info: dict = {"env": settings.app_env, "processing_mode": settings.processing_mode,
+                  "database_configured": not settings.database_url.startswith("postgresql+psycopg://prospec:prospec@localhost"),
+                  "auto_migrate": settings.auto_migrate, "migration_error": migrate.last_error}
+    try:
+        with SessionLocal() as db:
+            db.execute(text("SELECT 1"))
+            info["database"] = "ok"
+            try:
+                info["schema_version"] = db.scalar(text("SELECT version_num FROM alembic_version"))
+            except Exception:  # noqa: BLE001
+                info["schema_version"] = None
+    except Exception as e:  # noqa: BLE001
+        info["database"] = migrate.describe_error(e)
+    info["status"] = "ok" if info.get("database") == "ok" and info.get("schema_version") else "erro"
+    return info
 
 
 @router.get("/dashboard")

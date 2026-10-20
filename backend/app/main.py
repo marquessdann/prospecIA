@@ -50,13 +50,21 @@ _migrated = False
 
 @app.middleware("http")
 async def auto_migrate(request: Request, call_next):
-    """Na nuvem (AUTO_MIGRATE=true), aplica as migrações na primeira requisição de cada instância."""
+    """Na nuvem (AUTO_MIGRATE=true), aplica as migrações na primeira requisição de cada instância.
+
+    Uma falha não derruba a requisição: fica registrada e aparece em /api/health para diagnóstico.
+    """
     global _migrated
     if settings.auto_migrate and not _migrated:
-        from app.migrate import upgrade_head
+        from app import migrate
 
-        await asyncio.to_thread(upgrade_head)
-        _migrated = True
+        try:
+            await asyncio.to_thread(migrate.upgrade_head)
+            _migrated = True
+            migrate.last_error = None
+        except Exception as e:  # noqa: BLE001
+            migrate.last_error = migrate.describe_error(e)
+            log.exception("falha ao aplicar migrações")
     return await call_next(request)
 
 

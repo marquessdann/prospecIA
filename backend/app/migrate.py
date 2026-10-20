@@ -11,6 +11,16 @@ from alembic.config import Config
 from app.config import settings
 
 log = logging.getLogger("prospecia.migrate")
+last_error: str | None = None
+
+
+def describe_error(e: Exception) -> str:
+    """Descrição curta do erro, sem credenciais (remove usuário:senha de URLs)."""
+    import re
+
+    msg = re.sub(r"://[^@\s/]+@", "://***@", str(e))
+    msg = re.sub(r"password=\S+", "password=***", msg)
+    return f"{e.__class__.__name__}: {msg}"[:500]
 ROOT = Path(__file__).resolve().parents[1]
 
 
