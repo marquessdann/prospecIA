@@ -136,8 +136,8 @@ débito em **[docs/PAGAMENTO.md](docs/PAGAMENTO.md)**.
 ## 5. Instalação e execução
 
 ### Opção 0 — Nuvem gratuita (Vercel + Neon), sem instalar nada
-Passo a passo para iniciantes em **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**: dois projetos na Vercel
-(pastas `backend` e `frontend`) e banco Neon criado pelo painel. Sem worker contínuo, a fila avança em
+Passo a passo para iniciantes em **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**: um único projeto na Vercel
+(`vercel.json` na raiz com os serviços `web` = `frontend/` e `api` = `backend/` em `/api`) e banco Neon criado pelo painel. Sem worker contínuo, a fila avança em
 "ticks" de ~40 s disparados pelo navegador aberto e por um cron (`PROCESSING_MODE=request`); as
 migrações rodam sozinhas (`AUTO_MIGRATE=true`).
 

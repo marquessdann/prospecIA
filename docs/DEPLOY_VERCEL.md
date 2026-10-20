@@ -30,92 +30,76 @@ Na Vercel não existe um "worker" rodando o tempo todo. Por isso, com `PROCESSIN
    `prospecIA`).
 3. Autorize a Vercel a acessar o repositório `prospecIA` quando ela pedir.
 
-## Passo 2 — Publicar a API (backend)
+## Passo 2 — Importar o projeto (site + API juntos)
 
-1. No painel da Vercel: **Add New… → Project**.
-2. Na lista, escolha o repositório **prospecIA** → **Import**.
-3. Preencha:
-   - **Project Name:** `prospecia-api`
-   - **Root Directory:** clique em *Edit* e escolha a pasta **`backend`**
-   - **Framework Preset:** deixe o que a Vercel detectar (FastAPI/Python) — se aparecer "Other", tudo bem.
-4. Abra **Environment Variables** e adicione (nome = valor):
+O repositório tem um `vercel.json` na raiz que publica **dois serviços num único projeto e num único
+endereço**: o site (pasta `frontend`) e a API Python (pasta `backend`, servida em `/api`).
 
-   | Nome | Valor |
-   |---|---|
-   | `APP_ENV` | `production` |
-   | `SECRET_KEY` | uma sequência aleatória longa (mín. 40 caracteres) |
-   | `CRON_SECRET` | outra sequência aleatória longa (diferente da anterior) |
-   | `PROCESSING_MODE` | `request` |
-   | `AUTO_MIGRATE` | `true` |
-   | `DB_NULL_POOL` | `true` |
-   | `JOB_STALE_MINUTES` | `2` |
-   | `TICK_BUDGET_SECONDS` | `40` |
-   | `COOKIE_SECURE` | `true` |
-   | `SINGLE_USER_MODE` | `true` |
-   | `FREE_TIER_ONLY` | `true` |
-   | `WEB_QUERIES_PER_BUSINESS` | `1` |
-   | `OSM_CONTACT_EMAIL` | seu e-mail (exigido pela política do OpenStreetMap) |
+1. No painel da Vercel: **Add New… → Project** → repositório **prospecIA** → **Import**.
+2. **Project Name:** `prospecia`.
+3. **Root Directory:** deixe **vazio / `./`** (a raiz do repositório). *Não* escolha `backend` nem `frontend`.
+4. Em **Environment Variables**, cole o bloco abaixo no primeiro campo *Key* (a Vercel separa sozinha):
 
-5. Clique em **Deploy**. (Ainda vai faltar o banco — é o próximo passo.)
+   ```
+   APP_ENV=production
+   SECRET_KEY=uma-sequencia-aleatoria-longa-de-no-minimo-40-caracteres
+   CRON_SECRET=outra-sequencia-aleatoria-longa
+   PROCESSING_MODE=request
+   AUTO_MIGRATE=true
+   DB_NULL_POOL=true
+   JOB_STALE_MINUTES=2
+   COOKIE_SECURE=true
+   SINGLE_USER_MODE=true
+   FREE_TIER_ONLY=true
+   WEB_QUERIES_PER_BUSINESS=1
+   OSM_CONTACT_EMAIL=seu-email@exemplo.com
+   ```
+
+5. Clique em **Deploy**. (O banco vem no próximo passo; até lá a API responde com erro.)
 
 ## Passo 3 — Criar o banco de dados (Neon, grátis)
 
-1. Dentro do projeto **prospecia-api**, abra a aba **Storage**.
-2. **Create Database → Neon (Serverless Postgres)** → plano **Free** → região mais próxima
-   (ex.: São Paulo, se houver; senão Washington/US East).
-3. Na tela seguinte, conecte o banco ao projeto **prospecia-api** (marque *Production*, *Preview* e
-   *Development*). A Vercel cria sozinha as variáveis `DATABASE_URL` e `DATABASE_URL_UNPOOLED`.
-4. Vá em **Deployments**, clique nos três pontinhos do último deploy → **Redeploy**.
-5. Teste: abra `https://prospecia-api.vercel.app/api/health` (troque pelo endereço do seu projeto).
-   Deve aparecer `{"status":"ok", ...}`. Na primeira chamada as tabelas são criadas automaticamente.
+1. No projeto **prospecia**, abra a aba **Storage**.
+2. **Create Database → Neon (Serverless Postgres)** → plano **Free** → região mais próxima.
+3. Conecte o banco ao projeto **prospecia** (marque *Production*, *Preview* e *Development*). A Vercel
+   cria sozinha `DATABASE_URL` e `DATABASE_URL_UNPOOLED`.
+4. **Deployments** → três pontinhos do último deploy → **Redeploy**.
+5. Teste: `https://prospecia.vercel.app/api/health` (troque pelo seu endereço) deve mostrar
+   `{"status":"ok", ...}`. As tabelas são criadas automaticamente nessa primeira chamada.
 
-## Passo 4 — Publicar o site (frontend)
+## Passo 4 — Criar sua conta
 
-1. **Add New… → Project** → o mesmo repositório **prospecIA** → **Import**.
-2. Preencha:
-   - **Project Name:** `prospecia`
-   - **Root Directory:** **`frontend`**
-   - **Framework Preset:** Next.js (detectado automaticamente)
-3. **Environment Variables:**
-
-   | Nome | Valor |
-   |---|---|
-   | `API_URL` | o endereço da API do Passo 3, ex.: `https://prospecia-api.vercel.app` (sem barra no final) |
-
-4. **Deploy**. Ao terminar, abra o endereço (ex.: `https://prospecia.vercel.app`).
-5. Na primeira vez a tela abre em **Criar conta**: cadastre-se. Como `SINGLE_USER_MODE=true`,
-   depois disso ninguém mais consegue criar conta.
+Abra `https://prospecia.vercel.app`. Na primeira vez a tela abre em **Criar conta**. Como
+`SINGLE_USER_MODE=true`, depois disso ninguém mais consegue criar conta.
 
 Pronto: já dá para pesquisar no **OpenStreetMap** (grátis, sem chave).
 
 ## Passo 5 — (Opcional) Processar com a aba fechada
 
-O projeto da API já vem com um cron da Vercel que roda **1 vez por dia** (limite do plano gratuito).
-Para processar com mais frequência, use o **cron-job.org** (grátis, sem cartão):
+Use o **cron-job.org** (grátis, sem cartão):
 
 1. Crie conta em https://cron-job.org.
 2. **Create cronjob:**
-   - **URL:** `https://prospecia-api.vercel.app/api/worker/cron`
+   - **URL:** `https://prospecia.vercel.app/api/worker/cron`
    - **Schedule:** a cada 15 minutos
-   - Em **Advanced → Headers**, adicione: `Authorization` = `Bearer SEU_CRON_SECRET`
-     (o mesmo valor que você colocou em `CRON_SECRET`, com a palavra `Bearer` e um espaço antes).
-3. Salve. No histórico do cron-job.org deve aparecer resposta 200.
+   - Em **Advanced → Headers**: `Authorization` = `Bearer SEU_CRON_SECRET`
+3. Salve. No histórico deve aparecer resposta 200.
 
 ## Passo 6 — Ativar Google Places e Brave (quando conseguir cadastrar o pagamento)
 
-Siga `docs/PAGAMENTO.md` para obter as chaves. Depois, no projeto **prospecia-api**:
+Siga `docs/PAGAMENTO.md` para obter as chaves. Depois, no projeto **prospecia**:
 **Settings → Environment Variables** → adicione `GOOGLE_PLACES_API_KEY` e/ou `BRAVE_SEARCH_API_KEY`
 → **Deployments → Redeploy**. O modo gratuito (`FREE_TIER_ONLY=true`) continua impedindo cobranças.
 
 ## Atualizações
 
-Toda vez que um novo código for enviado ao GitHub, a Vercel publica sozinha os dois projetos.
+Toda vez que um novo código for enviado ao GitHub, a Vercel publica sozinha o projeto.
 
 ## Problemas comuns
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
 | `/api/health` dá erro 500 | banco não conectado | refaça o Passo 3 e o Redeploy |
-| Login não mantém a sessão | `API_URL` errado no frontend | confira o endereço (com `https://`, sem `/` no final) e faça Redeploy |
+| "This repository needs a vercel.json" | Root Directory apontando para `backend` ou `frontend` | volte o Root Directory para a raiz (`./`) |
 | Pesquisa fica "Na fila" | nenhuma aba aberta e sem cron | deixe a aba aberta ou faça o Passo 5 |
 | Erro do OpenStreetMap (429/timeout) | servidores públicos ocupados | o sistema tenta de novo sozinho; pesquise áreas menores (bairros) |
