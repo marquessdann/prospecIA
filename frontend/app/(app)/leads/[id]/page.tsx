@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PageTitle, useUser } from "@/components/Shell";
 import { Confidence, FictitiousTag, Score, StatusBadge } from "@/components/StatusBadge";
 import { Alert, Badge, Button, Card, CardHeader, Field, Input, Select, Spinner, cn } from "@/components/ui";
+import { WhatsAppPitch } from "@/components/WhatsAppPitch";
 import { api, type BusinessDetail, type DigitalStatus, type User } from "@/lib/api";
 import { INTERACTION_KIND, LEAD_STATUS, SCORE_CRITERIA, SOURCE_LABEL, STATUS, STATUS_ORDER, fmtDate, usd } from "@/lib/labels";
 
@@ -49,6 +50,14 @@ export default function BusinessPage() {
     if (!note.content.trim()) return;
     await api(`/api/businesses/${id}/interactions`, { method: "POST", json: note });
     setNote({ ...note, content: "" });
+    load();
+  }
+
+  async function registerWhatsApp(text: string) {
+    await api(`/api/businesses/${id}/interactions`, { method: "POST", json: { kind: "whatsapp", content: text } });
+    if (b && ["novo", "revisado"].includes(b.lead_status)) {
+      await api(`/api/businesses/${id}`, { method: "PATCH", json: { lead_status: "contato_realizado" } });
+    }
     load();
   }
 
@@ -150,6 +159,8 @@ export default function BusinessPage() {
               ))}
             </div>
           </Card>
+
+          <WhatsAppPitch business={b} defaultName={me?.name ?? ""} onSent={registerWhatsApp} />
 
           <Card>
             <CardHeader title="Prospecção (CRM)" />
