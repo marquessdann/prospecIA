@@ -96,3 +96,17 @@ def test_url_do_neon_e_normalizada():
                  database_url_unpooled="postgresql://u:p@ep-x.neon.tech/db?sslmode=require")
     assert s.database_url.startswith("postgresql+psycopg://u:p@ep-x-pooler")
     assert s.database_url_unpooled.startswith("postgresql+psycopg://")
+
+
+def test_painel_de_atividade_mostra_espera_de_nova_tentativa(request_mode, fake_sources):
+    places, _ = fake_sources
+    places.fail_times = 1
+    with TestClient(app) as c:
+        register(c)
+        s = c.post("/api/searches", json=SEARCH, headers=H).json()
+        assert c.get(f"/api/searches/{s['id']}").json()["activity"]["state"] == "queued"
+        c.post("/api/worker/tick", headers=H)
+        d = c.get(f"/api/searches/{s['id']}").json()
+        a = d["activity"]
+        assert a["state"] == "waiting_retry" and a["next_retry_at"] and "tentativa 2 de" in a["message"]
+        assert any("Buscando 'barbearias'" in e["message"] for e in d["events"])

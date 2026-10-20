@@ -165,6 +165,11 @@ async def run_search(search_id: int, client: httpx.AsyncClient, deadline: float 
             location = Location.from_dict(unit.location)
             unit.status = "running"
             unit.attempts += 1
+            unit.last_error = None  # o erro anterior não vale mais enquanto tenta de novo
+            if not unit.checkpoint:
+                retry = f" (tentativa {unit.attempts})" if unit.attempts > 1 else ""
+                log_event(db, search.id, f"Buscando '{unit.category}' em {location.label()} — {provider.label}{retry}…",
+                          provider=provider.name)
             db.commit()
             try:
                 while True:

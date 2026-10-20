@@ -140,10 +140,21 @@ class SearchEventOut(ORM):
     created_at: datetime
 
 
+class SearchActivity(BaseModel):
+    """O que a pesquisa está fazendo agora, em linguagem simples."""
+
+    state: str  # searching | waiting_retry | queued | verifying | paused | done | failed | cancelled
+    message: str
+    next_retry_at: datetime | None = None
+    units_done: int = 0
+    units_total: int = 0
+
+
 class SearchDetail(SearchOut):
     units: list[SearchUnitOut]
     events: list[SearchEventOut]
     status_counts: dict[str, int]
+    activity: SearchActivity
 
 
 # ---------- Empresas ----------

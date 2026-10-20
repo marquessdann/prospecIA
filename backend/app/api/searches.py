@@ -14,6 +14,7 @@ from app.models import (
     SearchTask,
     SearchUnit,
     User,
+    utcnow,
 )
 from app.providers.registry import place_provider
 from app.schemas import SearchConfig, SearchDetail, SearchOut
@@ -92,7 +93,42 @@ def get_search(search_id: int, user: User = Depends(get_current_user), db: Sessi
         .where(SearchResult.search_id == s.id).group_by(Business.digital_status)).all())
     units = list(db.scalars(select(SearchUnit).where(SearchUnit.search_id == s.id).order_by(SearchUnit.id)))
     return SearchDetail.model_validate({**SearchOut.model_validate(s).model_dump(), "units": units,
-                                        "events": events, "status_counts": counts})
+                                        "events": events, "status_counts": counts,
+                                        "activity": _activity(db, s, units)})
+
+
+def _activity(db: Session, s: SearchTask, units: list[SearchUnit]) -> dict:
+    done = sum(1 for u in units if u.status in ("done", "skipped")
+               or (u.status == "error" and u.attempts >= settings.job_max_attempts))
+    total = len(units)
+    base = {"units_done": done, "units_total": total}
+    if s.status == SearchStatus.paused.value:
+        return {**base, "state": "paused", "message": s.error_message or "Pesquisa pausada. Clique em Retomar para continuar."}
+    if s.status == SearchStatus.cancelled.value:
+        return {**base, "state": "cancelled", "message": "Pesquisa cancelada."}
+    if s.status == SearchStatus.completed.value:
+        return {**base, "state": "done", "message": f"Concluída: {s.total_found} empresas encontradas e {s.total_verified} verificadas."}
+    if s.status == SearchStatus.failed.value:
+        return {**base, "state": "failed", "message": s.error_message or "A pesquisa falhou. Use Retomar para tentar de novo."}
+    job = db.scalar(select(Job).where(Job.dedup_key == f"search:{s.id}").order_by(Job.id.desc()))
+    running = next((u for u in units if u.status == "running"), None)
+    if job is not None and job.status == JobStatus.running.value:
+        if running is not None:
+            loc = ", ".join(x for x in [running.location.get("neighborhood"), running.location.get("city")] if x) or "região"
+            return {**base, "state": "searching",
+                    "message": f"Buscando '{running.category}' em {loc} — lote {min(done + 1, total)} de {total}."}
+        return {**base, "state": "searching", "message": f"Buscando empresas — lote {min(done + 1, total)} de {total}."}
+    if job is not None and job.status == JobStatus.queued.value:
+        run_after = job.run_after if job.run_after.tzinfo else job.run_after.replace(tzinfo=utcnow().tzinfo)
+        if run_after > utcnow() and job.attempts > 0:
+            return {**base, "state": "waiting_retry", "next_retry_at": run_after,
+                    "message": f"Servidor da fonte ocupado. Nova tentativa automática agendada "
+                               f"(tentativa {job.attempts + 1} de {job.max_attempts})."}
+        return {**base, "state": "queued", "message": "Na fila — começa em instantes."}
+    if s.total_verified < s.total_to_verify:
+        return {**base, "state": "verifying",
+                "message": f"Verificando a presença digital: {s.total_verified} de {s.total_to_verify} empresas."}
+    return {**base, "state": "queued", "message": "Finalizando…"}
 
 
 @router.post("/{search_id}/pause", response_model=SearchOut)

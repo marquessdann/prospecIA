@@ -24,6 +24,7 @@ const NAV = [
  */
 function useBackgroundProcessing(enabled: boolean) {
   const [pending, setPending] = useState(0);
+  const [ready, setReady] = useState(0);
   const busy = useRef(false);
   useEffect(() => {
     if (!enabled) return;
@@ -34,6 +35,7 @@ function useBackgroundProcessing(enabled: boolean) {
           const st = await api<{ processing_mode: string; pending_jobs: number; ready_jobs: number }>("/api/worker/status");
           if (st.processing_mode !== "request") return; // worker dedicado processa sozinho
           setPending(st.pending_jobs);
+          setReady(st.ready_jobs);
           if (st.ready_jobs > 0 && !busy.current) {
             busy.current = true;
             const r = await api<{ pending_jobs: number; processed?: number }>("/api/worker/tick", { method: "POST" }).finally(() => (busy.current = false));
@@ -51,7 +53,7 @@ function useBackgroundProcessing(enabled: boolean) {
       stop = true;
     };
   }, [enabled]);
-  return pending;
+  return { pending, ready };
 }
 
 export function Shell({ children }: { children: ReactNode }) {
@@ -59,7 +61,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const pending = useBackgroundProcessing(!!user);
+  const { pending, ready } = useBackgroundProcessing(!!user);
 
   useEffect(() => {
     api<User>("/api/auth/me").then(setUser).catch(() => router.replace("/login"));
@@ -97,8 +99,11 @@ export function Shell({ children }: { children: ReactNode }) {
           {nav}
           {pending > 0 && (
             <div className="mx-3 mb-3 rounded-lg border border-brand-500/30 bg-brand-500/10 p-3 text-xs text-brand-300">
-              <div className="flex items-center gap-2 font-medium"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Processando {pending} tarefa(s)</div>
-              <p className="mt-1 text-neutral-400">Mantenha esta aba aberta para a pesquisa avançar.</p>
+              <div className="flex items-center gap-2 font-medium">
+                <Loader2 className={cn("h-3.5 w-3.5", ready > 0 && "animate-spin")} />
+                {ready > 0 ? `Processando ${pending} tarefa(s)` : `Aguardando nova tentativa (${pending})`}
+              </div>
+              <p className="mt-1 text-neutral-400">Mantenha esta aba aberta para a pesquisa avançar. Detalhes na página da pesquisa.</p>
             </div>
           )}
           <div className="border-t border-neutral-800 p-4 text-xs text-neutral-500">

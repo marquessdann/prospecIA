@@ -195,6 +195,13 @@ export interface SearchDetail extends Search {
   units: Array<{ id: number; source: string; location: LocationIn; category: string; status: string; results_count: number; requests_made: number; attempts: number; last_error: string | null }>;
   events: Array<{ id: number; level: string; provider: string | null; message: string; created_at: string }>;
   status_counts: Record<string, number>;
+  activity: {
+    state: "searching" | "waiting_retry" | "queued" | "verifying" | "paused" | "done" | "failed" | "cancelled";
+    message: string;
+    next_retry_at: string | null;
+    units_done: number;
+    units_total: number;
+  };
 }
 
 export interface ProviderInfo {

@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle, CheckCircle2, Clock, Loader2, PauseCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ResultsTable } from "@/components/ResultsTable";
@@ -13,8 +14,14 @@ export default function SearchDetailPage() {
   const router = useRouter();
   const [s, setS] = useState<SearchDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const [lastUpdate, setLastUpdate] = useState<number | null>(null);
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
-  const load = useCallback(() => api<SearchDetail>(`/api/searches/${id}`).then(setS).catch((e) => setError(e.message)), [id]);
+  const load = useCallback(() => api<SearchDetail>(`/api/searches/${id}`).then((d) => { setS(d); setLastUpdate(Date.now()); }).catch((e) => setError(e.message)), [id]);
   useEffect(() => { load(); }, [load]);
   const active = s && ["queued", "running"].includes(s.status);
   useEffect(() => {
@@ -35,7 +42,7 @@ export default function SearchDetailPage() {
   }
 
   if (!s) return error ? <Alert tone="error">{error}</Alert> : <Spinner />;
-  const unitsDone = s.units.filter((u) => ["done", "error", "skipped"].includes(u.status)).length;
+  const unitsDone = s.activity.units_done; // lotes com erro ainda em nova tentativa não contam como concluídos
   const discoveryPct = s.units.length ? (unitsDone / s.units.length) * 100 : 0;
   const verifyPct = s.total_to_verify ? (s.total_verified / s.total_to_verify) * 100 : s.status === "completed" ? 100 : 0;
 
@@ -49,6 +56,7 @@ export default function SearchDetailPage() {
           <Button variant="secondary" onClick={() => action("rerun")}>Executar novamente</Button>
         </>} />
       {error && <div className="mb-4"><Alert tone="error">{error}</Alert></div>}
+      <ActivityBanner s={s} now={now} lastUpdate={lastUpdate} />
       {s.error_message && <div className="mb-4"><Alert tone="warning">{s.error_message}</Alert></div>}
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -76,8 +84,8 @@ export default function SearchDetailPage() {
           <ul className="max-h-48 divide-y divide-neutral-800 overflow-y-auto text-xs">
             {s.units.map((u) => (
               <li key={u.id} className="flex items-start justify-between gap-2 px-4 py-2">
-                <span className="text-neutral-300">{u.source} · {u.category} · {[u.location.neighborhood, u.location.city, u.location.state].filter(Boolean).join(", ") || "coordenadas"}{u.last_error && <span className="block text-red-400">{u.last_error}</span>}</span>
-                <span className={cn("whitespace-nowrap font-medium", u.status === "error" ? "text-red-400" : u.status === "done" ? "text-green-400" : "text-neutral-400")}>{u.status} · {u.results_count}</span>
+                <span className="text-neutral-300">{u.source} · {u.category} · {[u.location.neighborhood, u.location.city, u.location.state].filter(Boolean).join(", ") || "coordenadas"}{u.status === "error" && u.last_error && <span className="block text-red-400">{u.last_error}</span>}</span>
+                <span className={cn("whitespace-nowrap font-medium", u.status === "error" ? "text-red-400" : u.status === "done" ? "text-green-400" : u.status === "running" ? "text-blue-300" : "text-neutral-400")}>{UNIT_STATUS[u.status] ?? u.status} · {u.results_count}</span>
               </li>
             ))}
           </ul>
@@ -99,5 +107,33 @@ export default function SearchDetailPage() {
         </ul>
       </Card>
     </>
+  );
+}
+
+const UNIT_STATUS: Record<string, string> = { pending: "aguardando", running: "buscando…", done: "concluído", error: "erro", skipped: "ignorado" };
+
+function ActivityBanner({ s, now, lastUpdate }: { s: SearchDetail; now: number; lastUpdate: number | null }) {
+  const a = s.activity;
+  const busy = a.state === "searching" || a.state === "verifying" || a.state === "queued";
+  const Icon = busy ? Loader2 : a.state === "waiting_retry" ? Clock : a.state === "paused" ? PauseCircle : a.state === "done" ? CheckCircle2 : AlertTriangle;
+  const tone = a.state === "done" ? "border-brand-500/40 bg-brand-500/10 text-brand-300"
+    : a.state === "failed" ? "border-red-500/40 bg-red-500/10 text-red-300"
+    : a.state === "waiting_retry" || a.state === "paused" ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-200"
+    : "border-blue-500/40 bg-blue-500/10 text-blue-200";
+  const secs = a.next_retry_at ? Math.max(0, Math.round((new Date(a.next_retry_at).getTime() - now) / 1000)) : null;
+  const ago = lastUpdate ? Math.round((now - lastUpdate) / 1000) : null;
+  return (
+    <div className={cn("mb-4 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3", tone)}>
+      <Icon className={cn("h-5 w-5 shrink-0", busy && "animate-spin")} />
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium">{a.message}</div>
+        <div className="mt-0.5 text-xs opacity-80">
+          {secs !== null && `Próxima tentativa em ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")} · `}
+          {a.units_total > 0 && `Lotes concluídos: ${a.units_done}/${a.units_total} · `}
+          {ago !== null && `atualizado há ${ago}s`}
+          {(busy || a.state === "waiting_retry") && " · mantenha esta aba aberta"}
+        </div>
+      </div>
+    </div>
   );
 }
