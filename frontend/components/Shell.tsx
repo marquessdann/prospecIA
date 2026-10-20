@@ -1,9 +1,9 @@
 "use client";
 
-import { BarChart3, Building2, LogOut, Map, Menu, Search, Settings, X } from "lucide-react";
+import { BarChart3, Building2, Loader2, LogOut, Map, Menu, Search, Settings, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { api, type User } from "@/lib/api";
 import { cn, Spinner } from "./ui";
 
@@ -18,11 +18,48 @@ const NAV = [
   { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
+/**
+ * Na nuvem sem servidor (Vercel), não há worker rodando o tempo todo: enquanto houver tarefas
+ * pendentes, o navegador chama /api/worker/tick em sequência para a fila avançar.
+ */
+function useBackgroundProcessing(enabled: boolean) {
+  const [pending, setPending] = useState(0);
+  const busy = useRef(false);
+  useEffect(() => {
+    if (!enabled) return;
+    let stop = false;
+    async function loop() {
+      while (!stop) {
+        try {
+          const st = await api<{ processing_mode: string; pending_jobs: number; ready_jobs: number }>("/api/worker/status");
+          if (st.processing_mode !== "request") return; // worker dedicado processa sozinho
+          setPending(st.pending_jobs);
+          if (st.ready_jobs > 0 && !busy.current) {
+            busy.current = true;
+            const r = await api<{ pending_jobs: number; processed?: number }>("/api/worker/tick", { method: "POST" }).finally(() => (busy.current = false));
+            setPending(r.pending_jobs);
+            if (r.processed) continue; // houve trabalho: próximo tick imediatamente
+          }
+        } catch {
+          /* erro transitório: tenta de novo em instantes */
+        }
+        await new Promise((res) => setTimeout(res, 5000));
+      }
+    }
+    loop();
+    return () => {
+      stop = true;
+    };
+  }, [enabled]);
+  return pending;
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const pending = useBackgroundProcessing(!!user);
 
   useEffect(() => {
     api<User>("/api/auth/me").then(setUser).catch(() => router.replace("/login"));
@@ -58,6 +95,12 @@ export function Shell({ children }: { children: ReactNode }) {
             <button className="text-neutral-600 lg:hidden" onClick={() => setOpen(false)} aria-label="Fechar menu"><X className="h-5 w-5" /></button>
           </div>
           {nav}
+          {pending > 0 && (
+            <div className="mx-3 mb-3 rounded-lg border border-brand-500/30 bg-brand-500/10 p-3 text-xs text-brand-300">
+              <div className="flex items-center gap-2 font-medium"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Processando {pending} tarefa(s)</div>
+              <p className="mt-1 text-neutral-400">Mantenha esta aba aberta para a pesquisa avançar.</p>
+            </div>
+          )}
           <div className="border-t border-neutral-800 p-4 text-xs text-neutral-500">
             <div className="truncate font-medium text-white">{user.name}</div>
             <div className="truncate">{user.email} · {user.role}</div>

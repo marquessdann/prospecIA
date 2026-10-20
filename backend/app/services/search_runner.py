@@ -43,7 +43,11 @@ class RetryLater(Exception):
 
 
 class Defer(Exception):
-    """Adia a tarefa sem consumir tentativas (ex.: pesquisa pausada)."""
+    """Adia a tarefa sem consumir tentativas (ex.: pesquisa pausada ou fim do tempo do tick)."""
+
+    def __init__(self, reason: str = "", delay_s: float = 30):
+        super().__init__(reason)
+        self.delay_s = delay_s
 
 
 def log_event(db: Session, search_id: int, message: str, level: str = "info", provider: str | None = None) -> None:
@@ -106,7 +110,10 @@ def maybe_finalize(db: Session, search_id: int) -> None:
     db.commit()
 
 
-async def run_search(search_id: int, client: httpx.AsyncClient) -> None:
+async def run_search(search_id: int, client: httpx.AsyncClient, deadline: float | None = None) -> None:
+    """Processa os lotes da pesquisa. Com `deadline` (relógio monotônico), devolve a tarefa à fila
+    ao fim do tempo disponível; o checkpoint por página permite continuar exatamente de onde parou."""
+    import time
     with SessionLocal() as db:
         search = db.get(SearchTask, search_id)
         if search is None or search.status in (SearchStatus.paused.value, SearchStatus.cancelled.value,
@@ -161,6 +168,11 @@ async def run_search(search_id: int, client: httpx.AsyncClient) -> None:
             db.commit()
             try:
                 while True:
+                    if deadline is not None and time.monotonic() > deadline:
+                        unit.status = "pending"
+                        unit.attempts = max(0, unit.attempts - 1)
+                        db.commit()
+                        raise Defer("tempo do tick esgotado; continua no próximo", delay_s=0)
                     remaining = max_results - search.total_found
                     if remaining <= 0:
                         break

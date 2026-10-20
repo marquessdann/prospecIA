@@ -34,19 +34,20 @@ from app.verification.site_checker import SiteChecker
 log = logging.getLogger("prospecia.worker")
 
 
-async def _handle(job_id: int, kind: str, payload: dict, client: httpx.AsyncClient, checker: SiteChecker) -> None:
+async def _handle(job_id: int, kind: str, payload: dict, client: httpx.AsyncClient, checker: SiteChecker,
+                  deadline: float | None = None) -> None:
     error: str | None = None
     retryable = True
-    deferred = False
+    deferred: float | None = None
     try:
         if kind == "run_search":
-            await run_search(payload["search_id"], client)
+            await run_search(payload["search_id"], client, deadline)
         elif kind == "verify_business":
             await run_verification(payload, client, checker)
         else:
             raise ValueError(f"tipo de tarefa desconhecido: {kind}")
-    except Defer:
-        deferred = True
+    except Defer as e:
+        deferred = e.delay_s
     except RetryLater as e:
         error = str(e)
     except ProviderError as e:
@@ -58,8 +59,8 @@ async def _handle(job_id: int, kind: str, payload: dict, client: httpx.AsyncClie
         job = db.get(Job, job_id)
         if job is None:
             return
-        if deferred:
-            queue.defer(db, job, 30)
+        if deferred is not None:
+            queue.defer(db, job, deferred)
             return
         if error is None:
             queue.complete(db, job)
@@ -110,6 +111,69 @@ async def run_worker(stop: asyncio.Event, concurrency: int | None = None, idle_e
                 await asyncio.wait(running, timeout=30)
         finally:
             await checker.aclose()
+
+
+async def run_tick(budget_s: float | None = None, concurrency: int | None = None) -> dict:
+    """Processa a fila por um tempo limitado (modo serverless, ex.: Vercel).
+
+    Chamado pelo navegador enquanto há trabalho pendente e por um cron. Uma trava no banco garante
+    que só um tick roda por vez; tarefas interrompidas são recuperadas pelo `recover_stale`.
+    """
+    from app.services import locks
+
+    budget = budget_s or settings.tick_budget_seconds
+    token = locks.acquire("worker_tick", budget + 15)
+    if token is None:
+        return {"ran": False, "reason": "outro processamento em andamento", **queue_status()}
+    worker_id = f"tick:{os.getpid()}"
+    concurrency = concurrency or settings.worker_concurrency
+    deadline = time.monotonic() + budget
+    claim_until = deadline - min(20.0, budget / 2)  # não começa tarefas novas perto do fim
+    processed = 0
+    running: set[asyncio.Task] = set()
+    try:
+        with SessionLocal() as db:
+            queue.recover_stale(db)
+        async with httpx.AsyncClient(timeout=30, headers={"User-Agent": "ProspecIA/1.0"}) as client:
+            checker = SiteChecker()
+            try:
+                while time.monotonic() < claim_until:
+                    free = concurrency - len(running)
+                    claimed = []
+                    if free > 0:
+                        with SessionLocal() as db:
+                            claimed = [(j.id, j.kind, j.payload) for j in queue.claim(db, worker_id, free)]
+                    for job_id, kind, payload in claimed:
+                        t = asyncio.create_task(_handle(job_id, kind, payload, client, checker, deadline))
+                        running.add(t)
+                        t.add_done_callback(running.discard)
+                        processed += 1
+                    if not claimed:
+                        if not running:
+                            break
+                        await asyncio.wait(running, timeout=0.5, return_when=asyncio.FIRST_COMPLETED)
+                    else:
+                        await asyncio.sleep(0)
+                if running:
+                    await asyncio.wait(running, timeout=max(1.0, deadline - time.monotonic() + 10))
+            finally:
+                await checker.aclose()
+        purge_expired()
+    finally:
+        locks.release("worker_tick", token)
+    return {"ran": True, "processed": processed, **queue_status()}
+
+
+def queue_status() -> dict:
+    from sqlalchemy import func, select
+
+    from app.models import JobStatus, utcnow
+
+    with SessionLocal() as db:
+        pending = db.scalar(select(func.count(Job.id)).where(Job.status.in_([JobStatus.queued.value, JobStatus.running.value]))) or 0
+        # "prontas" = podem rodar agora (as demais aguardam nova tentativa agendada)
+        ready = db.scalar(select(func.count(Job.id)).where(Job.status == JobStatus.queued.value, Job.run_after <= utcnow())) or 0
+    return {"pending_jobs": pending, "ready_jobs": ready}
 
 
 def main() -> None:

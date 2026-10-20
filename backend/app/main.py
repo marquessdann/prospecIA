@@ -10,7 +10,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import auth, businesses, misc, searches
+from app.api import auth, businesses, misc, searches, worker
 from app.config import settings
 
 logging.basicConfig(level=settings.log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -45,6 +45,21 @@ app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origin_list, allo
                    allow_methods=["*"], allow_headers=["*"])
 
 
+_migrated = False
+
+
+@app.middleware("http")
+async def auto_migrate(request: Request, call_next):
+    """Na nuvem (AUTO_MIGRATE=true), aplica as migrações na primeira requisição de cada instância."""
+    global _migrated
+    if settings.auto_migrate and not _migrated:
+        from app.migrate import upgrade_head
+
+        await asyncio.to_thread(upgrade_head)
+        _migrated = True
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     resp = await call_next(request)
@@ -64,3 +79,4 @@ app.include_router(auth.router)
 app.include_router(searches.router)
 app.include_router(businesses.router)
 app.include_router(misc.router)
+app.include_router(worker.router)

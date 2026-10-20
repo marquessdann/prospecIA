@@ -295,6 +295,15 @@ class ProviderQuotaUsage(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
+class AppLock(Base):
+    """Trava simples com prazo (lease): garante um único tick/migração por vez sem depender de sessão."""
+
+    __tablename__ = "app_locks"
+    name: Mapped[str] = mapped_column(String(60), primary_key=True)
+    locked_until: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    holder: Mapped[str | None] = mapped_column(String(100))
+
+
 class ApiCache(Base):
     __tablename__ = "api_cache"
     key: Mapped[str] = mapped_column(String(64), primary_key=True)

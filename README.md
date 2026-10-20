@@ -44,7 +44,7 @@ backend/
     api/              # rotas REST (auth, searches, businesses, dashboard, exports, settings)
     worker.py  main.py  models.py  schemas.py  security.py  demo.py
   alembic/            # migrações
-  tests/              # 50 testes (unidade, integrações simuladas, fluxo ponta a ponta)
+  tests/              # 56 testes (unidade, integrações simuladas, fluxo ponta a ponta)
 frontend/
   app/(app)/          # painel, pesquisas, resultados, detalhes, mapa, configurações
   components/  lib/
@@ -134,6 +134,12 @@ débito em **[docs/PAGAMENTO.md](docs/PAGAMENTO.md)**.
 ---
 
 ## 5. Instalação e execução
+
+### Opção 0 — Nuvem gratuita (Vercel + Neon), sem instalar nada
+Passo a passo para iniciantes em **[docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)**: dois projetos na Vercel
+(pastas `backend` e `frontend`) e banco Neon criado pelo painel. Sem worker contínuo, a fila avança em
+"ticks" de ~40 s disparados pelo navegador aberto e por um cron (`PROCESSING_MODE=request`); as
+migrações rodam sozinhas (`AUTO_MIGRATE=true`).
 
 ### Opção A — Docker Compose (recomendado)
 ```bash

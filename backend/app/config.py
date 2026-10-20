@@ -5,6 +5,7 @@ Nenhuma chave secreta é exposta ao frontend: o navegador só conversa com esta 
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,6 +31,16 @@ class Settings(BaseSettings):
     worker_poll_seconds: float = 1.0
     job_max_attempts: int = 4
     job_stale_minutes: int = 10
+
+    # --- Nuvem sem servidor (Vercel) ---
+    # worker  = processo `python -m app.worker` rodando continuamente (Docker/VPS)
+    # request = sem worker: a fila avança em "ticks" curtos chamados pelo navegador e por um cron
+    processing_mode: str = "worker"
+    tick_budget_seconds: float = 40.0  # tempo máximo de trabalho por tick (abaixo do limite da função)
+    cron_secret: str | None = None  # a Vercel envia "Authorization: Bearer <CRON_SECRET>" nos crons
+    auto_migrate: bool = False  # aplica as migrações do banco na primeira requisição
+    database_url_unpooled: str | None = None  # conexão direta (Neon) usada nas migrações
+    db_null_pool: bool = False  # sem pool de conexões (recomendado em funções serverless)
 
     # --- Fontes de empresas ---
     google_places_api_key: str | None = None
@@ -92,6 +103,16 @@ class Settings(BaseSettings):
     default_monthly_budget_usd: float = 25.0
     default_max_results_per_search: int = 200
     hard_max_results_per_search: int = 2000
+
+    @field_validator("database_url", "database_url_unpooled", mode="before")
+    @classmethod
+    def _sqlalchemy_url(cls, v):
+        """Aceita URLs no formato do Neon/Vercel (postgres:// ou postgresql://)."""
+        if isinstance(v, str):
+            for prefix in ("postgres://", "postgresql://"):
+                if v.startswith(prefix):
+                    return "postgresql+psycopg://" + v[len(prefix):]
+        return v or None
 
     @property
     def is_test(self) -> bool:

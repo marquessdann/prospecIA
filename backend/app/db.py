@@ -2,6 +2,7 @@ from collections.abc import Iterator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from app.config import settings
 
@@ -14,6 +15,11 @@ def _make_engine(url: str):
     kwargs: dict = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
+    elif url.startswith("postgresql+psycopg"):
+        # Poolers em modo transação (Neon, PgBouncer) não suportam prepared statements.
+        kwargs["connect_args"] = {"prepare_threshold": None}
+        if settings.db_null_pool:
+            kwargs["poolclass"] = NullPool
     return create_engine(url, **kwargs)
 
 
