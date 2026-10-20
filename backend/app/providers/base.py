@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 
 import httpx
 
+from app.config import settings
+from app.services import quota
 from app.services.cache import cache_get, cache_key, cache_set
 from app.services.ratelimit import get_limiter
 
@@ -19,11 +21,13 @@ log = logging.getLogger(__name__)
 class ProviderError(Exception):
     """Falha de integração. `retryable` indica se uma nova tentativa faz sentido."""
 
-    def __init__(self, provider: str, message: str, retryable: bool = True, billing: bool = False):
+    def __init__(self, provider: str, message: str, retryable: bool = True, billing: bool = False,
+                 quota_exhausted: bool = False):
         super().__init__(f"[{provider}] {message}")
         self.provider = provider
         self.retryable = retryable
         self.billing = billing  # cota/cobrança: avisar o usuário
+        self.quota_exhausted = quota_exhausted  # cota gratuita do mês/dia atingida (modo gratuito)
 
 
 @dataclass
@@ -122,6 +126,11 @@ class _HttpMixin:
     name: str = "base"
     rps: float = 1.0
     cache_hours: int = 0
+    cost_per_request: float = 0.0
+
+    def billable_cost(self) -> float:
+        """Custo de uma requisição; zero no modo gratuito (as requisições ficam dentro da cota grátis)."""
+        return 0.0 if settings.free_tier_only else self.cost_per_request
 
     async def _request(
         self,
@@ -143,9 +152,15 @@ class _HttpMixin:
         last: Exception | None = None
         for attempt in range(retries):
             await get_limiter(self.name, self.rps).acquire()
+            allowed, used, limit = quota.reserve(self.name)
+            if not allowed:
+                raise ProviderError(self.name, f"cota gratuita atingida ({used}/{limit} requisições no período); "
+                                    "bloqueado para evitar cobrança", retryable=False, billing=True,
+                                    quota_exhausted=True)
             try:
                 resp = await client.request(method, url, **kwargs)
             except httpx.HTTPError as e:
+                quota.release(self.name)  # a requisição não chegou ao provedor: não é cobrada
                 last = ProviderError(self.name, f"erro de rede: {e.__class__.__name__}")
             else:
                 if resp.status_code == 200:

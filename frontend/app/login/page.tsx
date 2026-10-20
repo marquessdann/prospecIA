@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Alert, Button, Card, Field, Input } from "@/components/ui";
 import { api } from "@/lib/api";
 
@@ -11,6 +11,17 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "", name: "", organization: "" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+
+  useEffect(() => {
+    api<{ registration_open: boolean; single_user_mode: boolean }>("/api/auth/options")
+      .then((o) => {
+        setRegistrationOpen(o.registration_open);
+        // Primeira execução no modo usuário único: abre direto em "Criar conta".
+        if (o.single_user_mode && o.registration_open) setMode("register");
+      })
+      .catch(() => undefined);
+  }, []);
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
 
   async function submit(e: FormEvent) {
@@ -33,13 +44,13 @@ export default function LoginPage() {
       <Card className="w-full max-w-md p-8">
         <h1 className="text-2xl font-bold">Prospec<span className="text-brand-400">IA</span></h1>
         <p className="mt-1 text-sm text-neutral-400">Encontre empresas sem site em fontes autorizadas, com evidências e nível de confiança.</p>
-        <div className="mt-6 grid grid-cols-2 rounded-lg bg-neutral-800 p-1 text-sm">
+        {registrationOpen && <div className="mt-6 grid grid-cols-2 rounded-lg bg-neutral-800 p-1 text-sm">
           {(["login", "register"] as const).map((m) => (
             <button key={m} onClick={() => setMode(m)} className={`rounded-md py-1.5 font-medium ${mode === m ? "bg-neutral-700 text-neutral-100 shadow" : "text-neutral-400"}`}>
               {m === "login" ? "Entrar" : "Criar conta"}
             </button>
           ))}
-        </div>
+        </div>}
         <form onSubmit={submit} className="mt-6 space-y-4">
           {mode === "register" && (
             <>

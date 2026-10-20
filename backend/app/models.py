@@ -283,6 +283,18 @@ class ApiUsage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class ProviderQuotaUsage(Base):
+    """Contador de requisições cobráveis por provedor e período (mês ou dia), para respeitar cotas gratuitas."""
+
+    __tablename__ = "provider_quota_usage"
+    __table_args__ = (UniqueConstraint("provider", "period"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider: Mapped[str] = mapped_column(String(40))
+    period: Mapped[str] = mapped_column(String(10))  # "2026-10" (mensal) ou "2026-10-20" (diário)
+    count: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
 class ApiCache(Base):
     __tablename__ = "api_cache"
     key: Mapped[str] = mapped_column(String(64), primary_key=True)

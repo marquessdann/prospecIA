@@ -95,6 +95,7 @@ class VerifyOptions:
     domain_guessing: bool = True
     max_web_candidates: int = 4
     use_ai: bool = True
+    web_queries: int = 2  # 1 = só nome+cidade (economiza cota gratuita); 2 = também pelo telefone
 
 
 def _ev(kind: str, source: str, detail: str, polarity: str = "0", url: str | None = None) -> dict:
@@ -176,17 +177,24 @@ async def verify(
     web_ok = 0
     web_errors: list[str] = []
     phone_query_done = False
+    quota_hit: str | None = None
     if opts.web_search and web is not None:
         queries = []
         place = biz.city or biz.state or biz.country or ""
         queries.append(f'"{biz.name}" {place}'.strip())
         if fp := format_phone_br(biz.phone_normalized):
             queries.append(f'"{fp}"')
+        queries = queries[: max(1, opts.web_queries)]
         web_found: list[tuple[int, Candidate]] = []
         for q in queries:
             try:
                 resp = await web.search(client, q, biz.country)
             except ProviderError as e:
+                if e.quota_exhausted:
+                    # Não é falha: a busca foi bloqueada para não gerar cobrança. Sem retentativa.
+                    quota_hit = web.label
+                    evidence.append(_ev("web_search", web.label, f"Cota gratuita de {web.label} esgotada no período; busca '{q}' não executada.", "0"))
+                    break
                 web_errors.append(str(e))
                 evidence.append(_ev("web_search", web.label, f"Falha na busca '{q}': {e}", "0"))
                 continue
@@ -356,8 +364,10 @@ async def verify(
     elif sources_without_site:
         out.status = "SITE_NAO_INFORMADO_NO_MAPS"
         out.confidence = 40
+        why = (f"a cota gratuita de {quota_hit} acabou neste período — reverifique quando ela renovar"
+               if quota_hit else "a busca web não foi executada (sem provedor configurado ou desativada)")
         out.reason = (f"{', '.join(sources_without_site)} não informa site. Isso NÃO confirma ausência de site na internet: "
-                      "a busca web não foi executada (sem provedor configurado ou desativada).")
+                      f"{why}.")
     else:
         out.status = "VERIFICACAO_PENDENTE"
         out.reason = "Não há dados suficientes para concluir a análise."

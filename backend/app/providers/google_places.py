@@ -81,7 +81,7 @@ class GooglePlacesProvider(PlaceProvider):
         )
         records = [self._parse(p) for p in data.get("places", [])]
         return DiscoveryPage(records=[r for r in records if r], next_token=data.get("nextPageToken"),
-                             requests=0 if cached else 1, cost_usd=0.0 if cached else self.cost_per_request,
+                             requests=0 if cached else 1, cost_usd=0.0 if cached else self.billable_cost(),
                              cached=cached)
 
     @staticmethod

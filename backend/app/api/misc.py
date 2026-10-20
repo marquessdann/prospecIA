@@ -14,6 +14,7 @@ from app.models import ApiUsage, Business, Organization, Role, SearchStatus, Sea
 from app.providers.registry import all_infos
 from app.schemas import WeightsIn
 from app.security import get_current_user, require_role
+from app.services import quota
 from app.services.costs import budget_status, month_start
 from app.services.export import to_csv, to_xlsx
 from app.services.scoring import CRITERIA_LABELS, compute_score, merge_weights
@@ -65,6 +66,8 @@ def dashboard(fictitious: bool | None = None, user: User = Depends(get_current_u
         "active_searches": active,
         "fictitious_count": fictitious_count,
         "budget": budget_status(db, user),
+        "free_tier_only": settings.free_tier_only,
+        "quotas": quota.all_usage(),
     }
 
 
@@ -104,6 +107,10 @@ def get_settings_info(user: User = Depends(get_current_user), db: Session = Depe
         "ai": {"enabled": settings.ai_enabled, "provider": settings.ai_provider,
                "model": settings.ai_model if settings.ai_enabled else None},
         "domain_guessing": settings.enable_domain_guessing,
+        "free_tier_only": settings.free_tier_only,
+        "single_user_mode": settings.single_user_mode,
+        "web_queries_per_business": settings.web_queries_per_business,
+        "quotas": quota.all_usage(),
         "verification_ttl_days": settings.verification_ttl_days,
         "scoring": {"weights": merge_weights(org.scoring_weights if org else None), "labels": CRITERIA_LABELS},
         "limits": {"hard_max_results_per_search": settings.hard_max_results_per_search},
@@ -140,5 +147,7 @@ def usage(user: User = Depends(get_current_user), db: Session = Depends(get_db))
         "by_provider": [{"provider": p, "operation": o, "units": int(u or 0), "cost_usd": round(float(c or 0), 4),
                          "calls": n} for p, o, u, c, n in rows],
         "by_user": [{"user": n, "cost_usd": round(float(c), 4)} for n, c in per_user],
+        "quotas": quota.all_usage(),
+        "free_tier_only": settings.free_tier_only,
         "budget": budget_status(db, user),
     }

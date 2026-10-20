@@ -44,7 +44,7 @@ backend/
     api/              # rotas REST (auth, searches, businesses, dashboard, exports, settings)
     worker.py  main.py  models.py  schemas.py  security.py  demo.py
   alembic/            # migrações
-  tests/              # 43 testes (unidade, integrações simuladas, fluxo ponta a ponta)
+  tests/              # 50 testes (unidade, integrações simuladas, fluxo ponta a ponta)
 frontend/
   app/(app)/          # painel, pesquisas, resultados, detalhes, mapa, configurações
   components/  lib/
@@ -114,6 +114,15 @@ Preços configuráveis no `.env` (`COST_*`, `AI_*_PRICE_PER_MTOK`). A tela "Nova
 **Total aproximado:** ~US$ 17 por 1.000 empresas com Google + Brave + IA padrão; ~US$ 12 sem IA ou com Haiku; **~US$ 10 com OSM + Brave**; **US$ 0 com apenas OSM** (sem confirmar "Sem site identificado"). 10.000 empresas ≈ US$ 120–170. Cache, créditos gratuitos e reaproveitamento de verificações recentes (`VERIFICATION_TTL_DAYS`) reduzem o custo real.
 
 Fontes de preço: [Brave Search API](https://brave.com/search/api/), [Google Maps Platform pricing](https://developers.google.com/maps/billing-and-pricing/pricing), [preços Anthropic](https://www.anthropic.com/pricing). Valores de terceiros e mudanças de SKU devem ser verificados antes de orçar.
+
+### Uso individual e gratuito (sem cartão de crédito)
+Com `FREE_TIER_ONLY=true` o sistema conta cada requisição cobrável (reserva atômica no banco, válida
+mesmo com vários workers) e **bloqueia antes de sair da cota grátis** de cada provedor — Google
+Places (~1.000 consultas/mês) e Brave (~US$ 5 de crédito/mês). A IA fica desligada nesse modo,
+`WEB_QUERIES_PER_BUSINESS=1` dobra o rendimento da Brave e `SINGLE_USER_MODE=true` permite apenas a
+sua conta. Se a cota acabar, nada é classificado como "Sem site" sem a busca: a empresa fica como
+"Site não informado no Maps" até ser reverificada. Passo a passo de cadastro com boleto/cartão de
+débito em **[docs/PAGAMENTO.md](docs/PAGAMENTO.md)**.
 
 ### Controles de consumo implementados
 - Limite de empresas por pesquisa (por usuário e teto global `HARD_MAX_RESULTS_PER_SEARCH`).

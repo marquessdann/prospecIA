@@ -202,7 +202,16 @@ async def run_search(search_id: int, client: httpx.AsyncClient) -> None:
                 unit.last_error = str(e)
                 level = "error"
                 msg = f"Erro de integração: {e}"
-                if e.billing:
+                if e.quota_exhausted:
+                    msg = (f"Cota gratuita de {provider.label} atingida: a busca nesta fonte parou para evitar cobrança. "
+                           "Os demais lotes continuam; retome a pesquisa quando a cota renovar.")
+                    search.error_message = "Cota gratuita atingida em uma das fontes. Use 'Retomar' quando a cota renovar."
+                    for other in search.units:
+                        if other.source == unit.source and other.status == "pending":
+                            other.status, other.last_error = "error", "cota gratuita atingida"
+                            other.attempts = settings.job_max_attempts
+                    level = "warning"
+                elif e.billing:
                     msg += " — verifique cota, faturamento e credenciais do provedor."
                 if not e.retryable:
                     unit.attempts = settings.job_max_attempts
@@ -281,7 +290,8 @@ async def run_verification(payload: dict, client: httpx.AsyncClient, checker: Si
         user_id = search.created_by if search else payload.get("user_id")
         opts = VerifyOptions(web_search=bool(cfg.get("web_verification", True)),
                              domain_guessing=bool(cfg.get("domain_guessing", settings.enable_domain_guessing)),
-                             use_ai=bool(cfg.get("use_ai", True)))
+                             use_ai=bool(cfg.get("use_ai", True)),
+                             web_queries=int(cfg.get("web_queries_per_business") or settings.web_queries_per_business))
         web = web_provider(cfg.get("web_provider")) if opts.web_search else None
         snap = snapshot(b)
     outcome = await verify(snap, client=client, web=web, checker=checker, ai=ai_analyzer, options=opts)

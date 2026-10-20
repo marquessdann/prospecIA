@@ -171,6 +171,7 @@ export interface SearchConfig {
   use_ai: boolean;
   max_results: number;
   force_reverify?: boolean;
+  web_queries_per_business?: number;
 }
 
 export interface Search {
@@ -214,4 +215,16 @@ export interface Budget {
   remaining_usd: number;
   percent: number;
   level: "ok" | "warning" | "exceeded";
+}
+
+export interface QuotaUsage {
+  provider: string;
+  label: string;
+  period: "month" | "day";
+  period_key: string;
+  used: number;
+  free_limit: number;
+  effective_limit: number;
+  remaining: number;
+  enforced: boolean;
 }

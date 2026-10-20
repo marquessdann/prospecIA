@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PageTitle } from "@/components/Shell";
 import { Alert, Button, Card, CardHeader, Spinner } from "@/components/ui";
-import { api, type Budget, type DigitalStatus } from "@/lib/api";
+import { QuotaBars } from "@/components/QuotaBars";
+import { api, type Budget, type DigitalStatus, type QuotaUsage } from "@/lib/api";
 import { LEAD_STATUS, STATUS, STATUS_ORDER, usd } from "@/lib/labels";
 
 interface Dash {
@@ -19,6 +20,8 @@ interface Dash {
   active_searches: number;
   fictitious_count: number;
   budget: Budget;
+  free_tier_only: boolean;
+  quotas: QuotaUsage[];
 }
 
 function Kpi({ label, value, color, href, hint }: { label: string; value: number; color?: string; href?: string; hint?: string }) {
@@ -65,7 +68,16 @@ export default function Dashboard() {
       {data.fictitious_count > 0 && (
         <div className="mb-4"><Alert tone="warning">A base contém <b>{data.fictitious_count}</b> registros <b>FICTÍCIOS</b> de demonstração (marcados na interface). Eles não são resultados reais de pesquisa.</Alert></div>
       )}
-      {b.level !== "ok" && (
+      {data.free_tier_only && (
+        <Card className="mb-4 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <span className="text-sm font-medium text-neutral-100">Modo gratuito: cotas grátis usadas</span>
+            <Link href="/settings" className="text-xs text-brand-400 hover:underline">detalhes</Link>
+          </div>
+          <QuotaBars quotas={data.quotas} compact />
+        </Card>
+      )}
+      {!data.free_tier_only && b.level !== "ok" && (
         <div className="mb-4"><Alert tone={b.level === "exceeded" ? "error" : "warning"}>Consumo do mês: {usd(b.spent_usd)} de {usd(b.monthly_budget_usd)} ({b.percent}%). {b.level === "exceeded" ? "Limite atingido: novas pesquisas estão bloqueadas." : "Você está próximo do limite mensal."}</Alert></div>
       )}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">

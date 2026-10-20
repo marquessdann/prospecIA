@@ -11,12 +11,28 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import ApiUsage, User
 from app.providers.registry import place_provider, web_provider
+from app.services import quota
 
 # Premissas da estimativa (ajuste conforme seu histórico real).
 AI_INPUT_TOKENS_PER_CALL = 1800
 AI_OUTPUT_TOKENS_PER_CALL = 350
 AI_CALL_RATE = 0.35  # fração das empresas que chegam a casos ambíguos e acionam a IA
-WEB_QUERIES_PER_BUSINESS = 2
+
+
+def _quota_note(provider: str, requests: int, warnings: list[str]) -> dict:
+    """Anexa a situação da cota gratuita à linha da estimativa e gera avisos."""
+    u = quota.usage(provider)
+    if not u:
+        return {}
+    per = "mês" if u["period"] == "month" else "dia"
+    note = f"cota grátis: {u['used']}/{u['effective_limit']} usadas no {per}, restam {u['remaining']}"
+    if requests > u["remaining"]:
+        if settings.free_tier_only:
+            warnings.append(f"{u['label']}: a pesquisa pode precisar de ~{requests} requisições, mas restam {u['remaining']} "
+                            f"grátis no {per}. Ela vai parar sozinha ao atingir a cota — sem cobrança.")
+        else:
+            warnings.append(f"{u['label']}: ~{requests} requisições excedem as {u['remaining']} grátis restantes; o excedente será cobrado.")
+    return {"note": note, "quota": u}
 
 
 def estimate(config: dict) -> dict:
@@ -26,7 +42,9 @@ def estimate(config: dict) -> dict:
     max_results = int(config.get("max_results") or settings.default_max_results_per_search)
     units = max(1, len(locations)) * max(1, len(categories))
     lines = []
+    warnings: list[str] = []
     total = 0.0
+    free = settings.free_tier_only
     expected_businesses = 0
     for s in sources:
         p = place_provider(s)
@@ -38,19 +56,20 @@ def estimate(config: dict) -> dict:
             requests = units * math.ceil(per_unit / 20)
         else:
             requests = units * 2  # geocodificação + consulta
-        cost = requests * p.cost_per_request
+        cost = requests * p.billable_cost()
         total += cost
-        lines.append({"provider": p.label, "requests": requests, "unit_cost_usd": p.cost_per_request,
-                      "cost_usd": round(cost, 4), "available": p.available()})
+        lines.append({"provider": p.label, "requests": requests, "unit_cost_usd": p.billable_cost(),
+                      "cost_usd": round(cost, 4), "available": p.available(), **_quota_note(p.name, requests, warnings)})
     expected_businesses = min(expected_businesses, max_results * units)
     if config.get("web_verification", True):
         w = web_provider(config.get("web_provider"))
         if w:
-            q = expected_businesses * WEB_QUERIES_PER_BUSINESS
-            cost = q * w.cost_per_request
+            per_business = int(config.get("web_queries_per_business") or settings.web_queries_per_business)
+            q = expected_businesses * per_business
+            cost = q * w.billable_cost()
             total += cost
-            lines.append({"provider": w.label, "requests": q, "unit_cost_usd": w.cost_per_request,
-                          "cost_usd": round(cost, 4), "available": True})
+            lines.append({"provider": w.label, "requests": q, "unit_cost_usd": w.billable_cost(),
+                          "cost_usd": round(cost, 4), "available": True, **_quota_note(w.name, q, warnings)})
         else:
             lines.append({"provider": "Busca web", "requests": 0, "unit_cost_usd": 0, "cost_usd": 0,
                           "available": False, "note": "Nenhum provedor configurado: empresas sem site no cadastro ficarão como 'Site não informado no Maps'."})
@@ -66,7 +85,10 @@ def estimate(config: dict) -> dict:
         "expected_businesses_max": expected_businesses,
         "lines": lines,
         "total_usd": round(total, 4),
-        "disclaimer": ("Estimativa máxima baseada nos preços configurados (USD). Créditos gratuitos mensais dos "
+        "free_tier_only": free,
+        "quota_warnings": warnings,
+        "disclaimer": ("Modo somente gratuito: nenhuma requisição além da cota grátis é feita, então o custo é zero. "
+                       if free else "") + ("Estimativa máxima baseada nos preços configurados (USD). Créditos gratuitos mensais dos "
                        "provedores, cache e resultados menores que o limite reduzem o custo real."),
     }
 

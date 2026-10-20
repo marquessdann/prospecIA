@@ -28,20 +28,23 @@ export default function NewSearchPage() {
   const router = useRouter();
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [aiEnabled, setAiEnabled] = useState(false);
+  const [freeTier, setFreeTier] = useState(false);
   const [locations, setLocations] = useState<LocationIn[]>([emptyLoc()]);
   const [categories, setCategories] = useState<string[]>([]);
   const [custom, setCustom] = useState("");
   const [sources, setSources] = useState<string[]>([]);
-  const [opts, setOpts] = useState({ web_verification: true, domain_guessing: true, use_ai: true, max_results: 100, web_provider: "", name: "", force_reverify: false });
+  const [opts, setOpts] = useState({ web_verification: true, domain_guessing: true, use_ai: true, max_results: 100, web_provider: "", name: "", force_reverify: false, web_queries_per_business: 2 });
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mapFor, setMapFor] = useState<number | null>(null);
 
   useEffect(() => {
-    api<{ providers: ProviderInfo[]; ai: { enabled: boolean } }>("/api/settings").then((s) => {
+    api<{ providers: ProviderInfo[]; ai: { enabled: boolean }; free_tier_only: boolean; web_queries_per_business: number }>("/api/settings").then((s) => {
       setProviders(s.providers);
       setAiEnabled(s.ai.enabled);
+      setFreeTier(s.free_tier_only);
+      setOpts((o) => ({ ...o, web_queries_per_business: s.web_queries_per_business }));
       setSources(s.providers.filter((p) => p.kind === "places" && p.available).map((p) => p.name).slice(0, 1));
     });
   }, []);
@@ -60,6 +63,7 @@ export default function NewSearchPage() {
     use_ai: opts.use_ai,
     max_results: opts.max_results,
     force_reverify: opts.force_reverify,
+    web_queries_per_business: opts.web_queries_per_business,
   });
 
   const updLoc = (i: number, patch: Partial<LocationIn>) => { setEstimate(null); setLocations((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l))); };
@@ -154,6 +158,12 @@ export default function NewSearchPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">Verificação de presença digital</p>
                 <Checkbox checked={opts.web_verification} onChange={(v) => setOpts({ ...opts, web_verification: v })} label="Buscar site oficial em mecanismo de busca autorizado"
                   hint={webProviders.length ? "Pesquisa nome + cidade e telefone." : "Nenhum provedor configurado: empresas sem site no cadastro ficarão como 'Site não informado no Maps'."} />
+                <Field label="Buscas por empresa" hint="1 = só nome + cidade (gasta metade da cota); 2 = também pelo telefone (mais preciso).">
+                  <Select value={opts.web_queries_per_business} onChange={(e) => { setEstimate(null); setOpts({ ...opts, web_queries_per_business: Number(e.target.value) }); }}>
+                    <option value={1}>1 busca (economiza cota)</option>
+                    <option value={2}>2 buscas (mais preciso)</option>
+                  </Select>
+                </Field>
                 {webProviders.length > 1 && (
                   <Select value={opts.web_provider} onChange={(e) => setOpts({ ...opts, web_provider: e.target.value })}>
                     <option value="">Automático</option>
@@ -161,7 +171,7 @@ export default function NewSearchPage() {
                   </Select>
                 )}
                 <Checkbox checked={opts.domain_guessing} onChange={(v) => setOpts({ ...opts, domain_guessing: v })} label="Testar domínios prováveis (DNS)" hint="Ex.: nomedaempresa.com.br — só confirma com telefone/endereço no site." />
-                <Checkbox checked={opts.use_ai && aiEnabled} onChange={(v) => setOpts({ ...opts, use_ai: v })} label={`Adjudicação por IA nos casos ambíguos${aiEnabled ? "" : " (não configurada)"}`} />
+                <Checkbox checked={opts.use_ai && aiEnabled} onChange={(v) => setOpts({ ...opts, use_ai: v })} label={`Adjudicação por IA nos casos ambíguos${aiEnabled ? "" : freeTier ? " (desligada no modo gratuito)" : " (não configurada)"}`} />
                 <Checkbox checked={opts.force_reverify} onChange={(v) => setOpts({ ...opts, force_reverify: v })} label="Reverificar empresas já verificadas recentemente" />
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Limite de empresas"><Input type="number" min={1} max={2000} value={opts.max_results} onChange={(e) => { setEstimate(null); setOpts({ ...opts, max_results: Number(e.target.value) }); }} /></Field>

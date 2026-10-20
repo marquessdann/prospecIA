@@ -77,6 +77,7 @@ class SearchConfig(BaseModel):
     web_provider: str | None = None
     domain_guessing: bool = True
     use_ai: bool = True
+    web_queries_per_business: int | None = Field(default=None, ge=1, le=2)
     max_results: int = Field(default=100, ge=1, le=2000)
     force_reverify: bool = False
 

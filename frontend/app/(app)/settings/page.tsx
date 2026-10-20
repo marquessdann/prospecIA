@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { PageTitle, useUser } from "@/components/Shell";
 import { Alert, Badge, Button, Card, CardHeader, Field, Input, Select, Spinner } from "@/components/ui";
-import { api, type Budget, type ProviderInfo, type User } from "@/lib/api";
+import { QuotaBars } from "@/components/QuotaBars";
+import { api, type Budget, type ProviderInfo, type QuotaUsage, type User } from "@/lib/api";
 import { usd } from "@/lib/labels";
 
 interface SettingsInfo {
@@ -13,6 +14,10 @@ interface SettingsInfo {
   verification_ttl_days: number;
   scoring: { weights: Record<string, number>; labels: Record<string, string> };
   retention: { google_places_days: number };
+  free_tier_only: boolean;
+  single_user_mode: boolean;
+  web_queries_per_business: number;
+  quotas: QuotaUsage[];
 }
 interface Usage {
   by_provider: { provider: string; operation: string; units: number; cost_usd: number; calls: number }[];
@@ -47,6 +52,21 @@ export default function SettingsPage() {
     <>
       <PageTitle title="Configurações" subtitle="Fontes conectadas, limites de cobertura, custos, pontuação e usuários." />
       {msg && <div className="mb-4"><Alert tone={msg.tone}>{msg.text}</Alert></div>}
+
+      <Card className="mb-4">
+        <CardHeader title="Cotas gratuitas das APIs"
+          subtitle={info.free_tier_only
+            ? "Modo somente gratuito ATIVO: o sistema para cada fonte antes de sair da cota grátis — você não é cobrado."
+            : "Modo gratuito desligado: as requisições são contadas, mas o excedente é cobrado pelo provedor."}
+          actions={<Badge className={info.free_tier_only ? "bg-brand-500/15 text-brand-300" : "bg-yellow-500/15 text-yellow-300"}>{info.free_tier_only ? "Somente gratuito" : "Pago"}</Badge>} />
+        <div className="space-y-4 p-5">
+          <QuotaBars quotas={info.quotas} />
+          <p className="text-xs text-neutral-500">
+            OpenStreetMap e a verificação dos sites são sempre gratuitos. Buscas por empresa na verificação: {info.web_queries_per_business} (1 economiza cota).
+            As cotas são contadas só pelo que este sistema faz; configure também um limite no painel do Google Cloud. Veja <code>docs/PAGAMENTO.md</code>.
+          </p>
+        </div>
+      </Card>
 
       <Card className="mb-4">
         <CardHeader title="Fontes de dados e cobertura" subtitle="Chaves de API ficam apenas no servidor (variáveis de ambiente) e nunca são enviadas ao navegador." />
@@ -101,7 +121,7 @@ export default function SettingsPage() {
         </Card>
       </div>
 
-      <Card className="mt-4">
+      {!info.single_user_mode && <Card className="mt-4">
         <CardHeader title="Usuários e limites" subtitle="Limite de consumo mensal e de empresas por pesquisa por usuário." />
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
@@ -135,7 +155,7 @@ export default function SettingsPage() {
             <div className="flex items-end"><Button onClick={wrap(() => api("/api/users", { method: "POST", json: newUser }), "Usuário criado.")}>Adicionar usuário</Button></div>
           </div>
         )}
-      </Card>
+      </Card>}
     </>
   );
 }

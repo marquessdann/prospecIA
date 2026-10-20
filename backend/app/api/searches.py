@@ -52,6 +52,7 @@ def estimate_search(cfg: SearchConfig, user: User = Depends(get_current_user), d
         warnings.append(f"Sem credenciais/indisponível: {', '.join(unavailable)}.")
     if est["total_usd"] > budget["remaining_usd"]:
         warnings.append("A estimativa máxima excede o saldo do seu limite mensal; a pesquisa será pausada ao atingir o limite.")
+    warnings.extend(est.get("quota_warnings", []))
     if data["max_results"] < cfg.max_results:
         warnings.append(f"Limite de empresas ajustado para {data['max_results']} conforme seu perfil.")
     return {**est, "budget": budget, "warnings": warnings, "max_results": data["max_results"]}

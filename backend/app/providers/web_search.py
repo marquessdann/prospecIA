@@ -54,7 +54,7 @@ class BraveSearchProvider(WebSearchProvider):
         )
         results = [WebResult(url=r.get("url", ""), title=r.get("title"), snippet=r.get("description"), rank=i + 1)
                    for i, r in enumerate((data.get("web") or {}).get("results", [])) if r.get("url")]
-        return WebSearchResponse(query=query, results=results, cost_usd=0.0 if cached else self.cost_per_request,
+        return WebSearchResponse(query=query, results=results, cost_usd=0.0 if cached else self.billable_cost(),
                                  cached=cached)
 
 
@@ -87,5 +87,5 @@ class GoogleCseProvider(WebSearchProvider):
                                            params=params, cache_payload=cache_params)
         results = [WebResult(url=it.get("link", ""), title=it.get("title"), snippet=it.get("snippet"), rank=i + 1)
                    for i, it in enumerate(data.get("items", []) or []) if it.get("link")]
-        return WebSearchResponse(query=query, results=results, cost_usd=0.0 if cached else self.cost_per_request,
+        return WebSearchResponse(query=query, results=results, cost_usd=0.0 if cached else self.billable_cost(),
                                  cached=cached)

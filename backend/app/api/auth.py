@@ -28,7 +28,7 @@ def _set_cookie(resp: Response, token: str) -> None:
 def register(data: RegisterIn, response: Response, db: Session = Depends(get_db)):
     """Cria uma organização e seu primeiro usuário (administrador)."""
     first_user = (db.scalar(select(func.count(User.id))) or 0) == 0
-    if not settings.allow_registration and not first_user:
+    if not first_user and (settings.single_user_mode or not settings.allow_registration):
         raise HTTPException(403, "Cadastro desabilitado. Peça um convite ao administrador.")
     if db.scalar(select(User).where(func.lower(User.email) == data.email.lower())):
         raise HTTPException(409, "E-mail já cadastrado")
@@ -42,6 +42,14 @@ def register(data: RegisterIn, response: Response, db: Session = Depends(get_db)
     db.commit()
     _set_cookie(response, create_token(user))
     return user
+
+
+@router.get("/auth/options")
+def auth_options(db: Session = Depends(get_db)):
+    """Informa à tela de login se ainda é possível criar conta."""
+    has_users = (db.scalar(select(func.count(User.id))) or 0) > 0
+    open_ = not has_users or (settings.allow_registration and not settings.single_user_mode)
+    return {"registration_open": open_, "single_user_mode": settings.single_user_mode}
 
 
 @router.post("/auth/login")
@@ -73,6 +81,8 @@ def list_users(user: User = Depends(get_current_user), db: Session = Depends(get
 
 @router.post("/users", response_model=UserOut, status_code=201)
 def create_user(data: UserCreate, admin: User = Depends(require_role(Role.admin)), db: Session = Depends(get_db)):
+    if settings.single_user_mode:
+        raise HTTPException(403, "Modo de usuário único ativo (SINGLE_USER_MODE=true).")
     if db.scalar(select(User).where(func.lower(User.email) == data.email.lower())):
         raise HTTPException(409, "E-mail já cadastrado")
     u = User(org_id=admin.org_id, email=data.email.lower(), name=data.name, password_hash=hash_password(data.password),

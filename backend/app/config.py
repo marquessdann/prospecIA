@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     cookie_secure: bool = False
     allow_registration: bool = True
+    # Uso individual: só permite criar a primeira conta e simplifica a gestão de usuários.
+    single_user_mode: bool = False
     log_level: str = "INFO"
 
     # --- Infra ---
@@ -70,6 +72,16 @@ class Settings(BaseSettings):
     ai_output_price_per_mtok: float = 20.0
     ai_use_server_fallbacks: bool = True
 
+    # --- Modo somente gratuito ---
+    # Conta cada requisição cobrável e bloqueia antes de ultrapassar a cota gratuita do provedor.
+    # A contagem é feita sempre; o bloqueio só ocorre com FREE_TIER_ONLY=true.
+    free_tier_only: bool = False
+    free_tier_safety_percent: int = 90  # usa só 90% da cota, por segurança
+    google_places_free_monthly_requests: int = 1000  # SKU Text Search Enterprise
+    brave_search_free_monthly_requests: int = 1000  # crédito mensal de US$ 5 / US$ 0,005
+    google_cse_free_daily_requests: int = 100
+    web_queries_per_business: int = 2  # 1 = só nome+cidade (economiza cota); 2 = nome+cidade e telefone
+
     # --- Custos (USD, editáveis: confira a página de preços de cada provedor) ---
     cost_google_text_search_per_request: float = 0.035  # Text Search Enterprise (site/telefone/avaliação)
     cost_brave_search_per_request: float = 0.005
@@ -91,7 +103,8 @@ class Settings(BaseSettings):
 
     @property
     def ai_enabled(self) -> bool:
-        return self.ai_provider == "anthropic" and bool(self.anthropic_api_key)
+        # IA não tem cota gratuita: fica desligada no modo somente gratuito.
+        return self.ai_provider == "anthropic" and bool(self.anthropic_api_key) and not self.free_tier_only
 
 
 @lru_cache
