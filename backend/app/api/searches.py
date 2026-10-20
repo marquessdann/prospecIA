@@ -101,7 +101,7 @@ def _activity(db: Session, s: SearchTask, units: list[SearchUnit]) -> dict:
     done = sum(1 for u in units if u.status in ("done", "skipped")
                or (u.status == "error" and u.attempts >= settings.job_max_attempts))
     total = len(units)
-    base = {"units_done": done, "units_total": total}
+    base = {"units_done": done, "units_total": total, "server_time": utcnow()}
     if s.status == SearchStatus.paused.value:
         return {**base, "state": "paused", "message": s.error_message or "Pesquisa pausada. Clique em Retomar para continuar."}
     if s.status == SearchStatus.cancelled.value:

@@ -146,6 +146,7 @@ class SearchActivity(BaseModel):
     state: str  # searching | waiting_retry | queued | verifying | paused | done | failed | cancelled
     message: str
     next_retry_at: datetime | None = None
+    server_time: datetime | None = None  # a tela calcula a contagem regressiva pelo relógio do servidor
     units_done: int = 0
     units_total: int = 0
 

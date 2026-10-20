@@ -120,7 +120,10 @@ function ActivityBanner({ s, now, lastUpdate }: { s: SearchDetail; now: number; 
     : a.state === "failed" ? "border-red-500/40 bg-red-500/10 text-red-300"
     : a.state === "waiting_retry" || a.state === "paused" ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-200"
     : "border-blue-500/40 bg-blue-500/10 text-blue-200";
-  const secs = a.next_retry_at ? Math.max(0, Math.round((new Date(a.next_retry_at).getTime() - now) / 1000)) : null;
+  // Usa o relógio do servidor (o do computador pode estar errado): espera restante = alvo − hora do servidor − tempo desde a resposta.
+  const secs = a.next_retry_at && a.server_time && lastUpdate
+    ? Math.max(0, Math.round((new Date(a.next_retry_at).getTime() - new Date(a.server_time).getTime() - (now - lastUpdate)) / 1000))
+    : null;
   const ago = lastUpdate ? Math.round((now - lastUpdate) / 1000) : null;
   return (
     <div className={cn("mb-4 flex flex-wrap items-center gap-3 rounded-xl border px-4 py-3", tone)}>

@@ -199,6 +199,7 @@ export interface SearchDetail extends Search {
     state: "searching" | "waiting_retry" | "queued" | "verifying" | "paused" | "done" | "failed" | "cancelled";
     message: string;
     next_retry_at: string | null;
+    server_time: string | null;
     units_done: number;
     units_total: number;
   };
